@@ -67,7 +67,10 @@ ${parts.join('\n\n')}
     init,
     isAvailable,
     createButton,
-    mountButton
+    mountButton,
+    // For a page that renders a placeholder after load and would rather say so than call
+    // init() again.
+    renderPlaceholders
   });
 }());
 `;

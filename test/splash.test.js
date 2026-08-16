@@ -2,7 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { showSplash, COPY } from '../src/splash.js';
-import { createButton, BUTTON_POSITIONS } from '../src/button.js';
+import {
+  createButton,
+  renderPlaceholders,
+  BUTTON_POSITIONS,
+  BUTTON_PLACEHOLDER
+} from '../src/button.js';
 
 // A DOM stub, not a DOM. Enough of one to run the builders end to end and catch the things
 // that only show up when code is executed: a misspelled property, a call on something
@@ -192,4 +197,55 @@ test('an unrecognised position falls back rather than going unplaced', () => {
 
   assert.ok(button.style.bottom || button.style.top);
   assert.ok(Object.keys(BUTTON_POSITIONS).includes('bottom-right'));
+});
+
+// The Starter path: a site writes one empty element and gets our button, with no styling
+// decisions of its own to make.
+test('an empty placeholder is filled with the branded button', () => {
+  const doc = fakeDom();
+  const slot = doc.createElement('div');
+  slot.attributes[BUTTON_PLACEHOLDER] = '';
+  doc.querySelectorAll = (selector) =>
+    selector.includes(BUTTON_PLACEHOLDER) ? [slot] : [];
+
+  assert.equal(renderPlaceholders({ doc }), 1);
+  assert.equal(slot.children.length, 1);
+  assert.equal(slot.children[0].attributes['data-sr-trigger'], '');
+});
+
+// It sits in the flow rather than floating: a button placed deliberately in a footer should
+// belong to the footer.
+test('a placeholder button is inline, not pinned to a corner', () => {
+  const doc = fakeDom();
+  const slot = doc.createElement('div');
+  slot.attributes[BUTTON_PLACEHOLDER] = '';
+  doc.querySelectorAll = (selector) => (selector.includes(BUTTON_PLACEHOLDER) ? [slot] : []);
+
+  renderPlaceholders({ doc });
+  const button = slot.children[0];
+
+  assert.equal(button.style.position, 'static');
+  assert.equal(button.attributes[BUTTON_PLACEHOLDER], 'inline');
+});
+
+// Naming a corner asks for the floating one instead.
+test('a placeholder naming a corner floats there', () => {
+  const doc = fakeDom();
+  const slot = doc.createElement('div');
+  slot.attributes[BUTTON_PLACEHOLDER] = 'bottom-left';
+  doc.querySelectorAll = (selector) => (selector.includes(BUTTON_PLACEHOLDER) ? [slot] : []);
+
+  renderPlaceholders({ doc });
+  const button = slot.children[0];
+
+  assert.equal(button.style.position, 'fixed');
+  assert.ok(button.style.left);
+});
+
+test('a placeholder that already has something in it is left alone', () => {
+  const doc = fakeDom();
+  // :empty is the selector doing the work in a real DOM; here nothing matches it.
+  doc.querySelectorAll = () => [];
+
+  assert.equal(renderPlaceholders({ doc }), 0);
 });

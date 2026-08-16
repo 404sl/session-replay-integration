@@ -18,6 +18,7 @@
 
 import { detectExtension, isSupportedBrowser, OPEN_EVENT, OPENED_EVENT } from './detect.js';
 import { showSplash } from './splash.js';
+import { renderPlaceholders } from './button.js';
 
 export const TRIGGER_ATTRIBUTE = 'data-sr-trigger';
 
@@ -120,6 +121,13 @@ export function init(options = {}) {
   // for the usual <a href="#"> is: navigate to #.
   //
   // Delegation also means a button rendered after this ran needs no second call.
+
+  // Filled before the guard below, deliberately. A site that renders its placeholder after
+  // the first run - any SPA, any page that builds its footer late - calls init() again, and
+  // the guard would otherwise return early and leave that placeholder empty. Filling is
+  // idempotent on its own: the selector only matches an element with nothing in it.
+  renderPlaceholders({ doc });
+
   if (doc[LISTENER_FLAG]) return false;
 
   doc[LISTENER_FLAG] = true;

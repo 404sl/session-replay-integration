@@ -14,13 +14,14 @@ it, and explains where to get it when they do not.
 ### A script tag
 
 ```html
-<script src="https://session-replay.com/sr.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
 
 <button data-sr-trigger>Report a bug</button>
 ```
 
 Any element with `data-sr-trigger` becomes a trigger. Style it however you like — this
-library never touches how your button looks.
+library never touches how your button looks. That is the path for a site that wants its own
+design; the placeholder above is the path for a site that wants none.
 
 ### npm
 
@@ -39,12 +40,40 @@ document when imported would be a poor citizen of somebody else's build; call `i
 your app is ready. The script-tag build above wires itself, because that is what a script
 tag is for.
 
+## The short version
+
+Write one empty element. The button that appears is ours - mark, wording, colours and
+states - and you make no styling decisions at all:
+
+```html
+<head>
+  <script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
+</head>
+...
+<div data-session-replay-button></div>
+```
+
+**In the head, with `defer`.** In the head so it is fetched while the page is still
+parsing rather than after it; `defer` so it does not block that parsing and runs once the
+elements it fills exist. It works from the end of the body too — it waits for
+`DOMContentLoaded` when it has to — but the head is a page-load faster.
+
+**The version is in the filename**, so the URL you install never changes contents and is
+cached indefinitely. Taking a new version is a deliberate edit, not something that happens
+to you overnight.
+
+Give the attribute a corner name and it floats there instead:
+
+```html
+<div data-session-replay-button="bottom-right"></div>
+```
+
 ## A button, if you want ours
 
 Style your own trigger, or take a floating one:
 
 ```html
-<script src="https://session-replay.com/sr.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
 <script>
   addEventListener('load', () => SessionReplay.mountButton());
 </script>
@@ -89,7 +118,8 @@ import { report, isAvailable, init } from '@404sl/session-replay-integration';
 
 await isAvailable();  // is the extension on this page?
 await report();       // 'opened' | 'blocked' | 'missing' | 'unsupported'
-init();               // listen for [data-sr-trigger] presses; safe to call again
+init();               // listen, and fill placeholders; safe to call again
+renderPlaceholders(); // fill placeholders rendered since, on their own
 mountButton();        // our floating button, if you want one
 createButton();       // the element on its own, to place yourself
 ```
