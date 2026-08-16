@@ -21,6 +21,9 @@ import { showSplash } from './splash.js';
 
 export const TRIGGER_ATTRIBUTE = 'data-sr-trigger';
 
+// Marks a document as already listening, so calling init() twice is harmless.
+const LISTENER_FLAG = '__sessionReplayDelegated';
+
 // How long to wait for the panel to actually open before assuming Chrome refused. The
 // extension answers either way; this is only for the case where nothing answers at all.
 const OPEN_TIMEOUT_MS = 1500;
@@ -75,30 +78,46 @@ export async function report(options = {}) {
 }
 
 /**
- * Wire every element carrying the trigger attribute.
+ * Start listening for presses of any element carrying the trigger attribute.
  *
- * Idempotent: elements added later can be wired by calling this again, and an element that
- * has already been wired is skipped rather than given a second handler.
+ * Safe to call more than once, and needs calling only once per document however many
+ * triggers there are or when they appear.
  *
- * @returns {number} how many were newly wired
+ * @returns {boolean} whether this call was the one that started listening
  */
 export function init(options = {}) {
-  const { doc = document } = options;
-  const wiredFlag = '__sessionReplayWired';
-  let wired = 0;
+  // onTrigger exists so the delegation can be tested without the overlay and the extension
+  // handshake coming with it. Everything else calls it with the default.
+  const { doc = document, onTrigger = report } = options;
 
-  doc.querySelectorAll(`[${TRIGGER_ATTRIBUTE}]`).forEach((node) => {
-    if (node[wiredFlag]) return;
+  // One listener on the document rather than one per element.
+  //
+  // Wiring elements individually breaks on any site that replaces its DOM - Turbo, React,
+  // htmx - because the button that gets clicked is a different element from the one that
+  // was wired, and it silently falls back to whatever the markup does on its own. Which
+  // for the usual <a href="#"> is: navigate to #.
+  //
+  // Delegation also means a button rendered after this ran needs no second call.
+  if (doc[LISTENER_FLAG]) return false;
 
-    node[wiredFlag] = true;
-    node.addEventListener('click', (event) => {
+  doc[LISTENER_FLAG] = true;
+
+  // Capture phase, so this runs before frameworks that intercept clicks on the way up.
+  // Turbo listens for clicks on the document and would otherwise start a visit to "#"
+  // before preventDefault had been called on the way back down.
+  doc.addEventListener(
+    'click',
+    (event) => {
+      const trigger = event.target?.closest?.(`[${TRIGGER_ATTRIBUTE}]`);
+      if (!trigger) return;
+
       event.preventDefault();
-      report(options);
-    });
-    wired += 1;
-  });
+      onTrigger(options);
+    },
+    true
+  );
 
-  return wired;
+  return true;
 }
 
 /**
