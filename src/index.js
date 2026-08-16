@@ -56,9 +56,14 @@ export async function report(options = {}) {
     return supported ? 'missing' : 'unsupported';
   }
 
-  const opened = await requestPanel({ win });
+  const { opened, reason } = await requestPanel({ win });
 
   if (opened) return 'opened';
+
+  // Logged, not shown. Whether Chrome will open a panel for a click that began in a page
+  // is the question this feature turns on, and the answer belongs where a developer can
+  // read it - the visitor only needs to be told what to do instead.
+  if (reason && win.console) win.console.warn(`[session-replay] panel did not open: ${reason}`);
 
   // Chrome only lets an extension open its own panel in response to its own button being
   // pressed. Whether a click that started in the page counts has changed between Chrome
@@ -99,7 +104,7 @@ export function init(options = {}) {
 /**
  * Ask the extension to open its panel, and wait to hear whether it did.
  *
- * @returns {Promise<boolean>}
+ * @returns {Promise<{opened: boolean, reason?: string}>}
  */
 export function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {}) {
   return new Promise((resolve) => {
@@ -112,11 +117,12 @@ export function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {})
       resolve(value);
     };
 
-    const onResult = (event) => finish(Boolean(event?.detail?.opened));
+    const onResult = (event) =>
+      finish({ opened: Boolean(event?.detail?.opened), reason: event?.detail?.reason });
 
     win.addEventListener(OPENED_EVENT, onResult);
     win.dispatchEvent(new win.CustomEvent(OPEN_EVENT));
-    win.setTimeout(() => finish(false), timeoutMs);
+    win.setTimeout(() => finish({ opened: false, reason: 'no answer' }), timeoutMs);
   });
 }
 
