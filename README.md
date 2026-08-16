@@ -14,7 +14,7 @@ it, and explains where to get it when they do not.
 ### A script tag
 
 ```html
-<script src="https://session-replay.com/sr.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
 
 <button data-sr-trigger>Report a bug</button>
 ```
@@ -46,10 +46,21 @@ Write one empty element. The button that appears is ours - mark, wording, colour
 states - and you make no styling decisions at all:
 
 ```html
-<script src="https://session-replay.com/sr.js" defer></script>
-
+<head>
+  <script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
+</head>
+...
 <div data-session-replay-button></div>
 ```
+
+**In the head, with `defer`.** In the head so it is fetched while the page is still
+parsing rather than after it; `defer` so it does not block that parsing and runs once the
+elements it fills exist. It works from the end of the body too — it waits for
+`DOMContentLoaded` when it has to — but the head is a page-load faster.
+
+**The version is in the filename**, so the URL you install never changes contents and is
+cached indefinitely. Taking a new version is a deliberate edit, not something that happens
+to you overnight.
 
 Give the attribute a corner name and it floats there instead:
 
@@ -62,7 +73,7 @@ Give the attribute a corner name and it floats there instead:
 Style your own trigger, or take a floating one:
 
 ```html
-<script src="https://session-replay.com/sr.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
 <script>
   addEventListener('load', () => SessionReplay.mountButton());
 </script>
@@ -107,7 +118,8 @@ import { report, isAvailable, init } from '@404sl/session-replay-integration';
 
 await isAvailable();  // is the extension on this page?
 await report();       // 'opened' | 'blocked' | 'missing' | 'unsupported'
-init();               // listen for [data-sr-trigger] presses; safe to call again
+init();               // listen, and fill placeholders; safe to call again
+renderPlaceholders(); // fill placeholders rendered since, on their own
 mountButton();        // our floating button, if you want one
 createButton();       // the element on its own, to place yourself
 ```

@@ -121,14 +121,16 @@ export function init(options = {}) {
   // for the usual <a href="#"> is: navigate to #.
   //
   // Delegation also means a button rendered after this ran needs no second call.
+
+  // Filled before the guard below, deliberately. A site that renders its placeholder after
+  // the first run - any SPA, any page that builds its footer late - calls init() again, and
+  // the guard would otherwise return early and leave that placeholder empty. Filling is
+  // idempotent on its own: the selector only matches an element with nothing in it.
+  renderPlaceholders({ doc });
+
   if (doc[LISTENER_FLAG]) return false;
 
   doc[LISTENER_FLAG] = true;
-
-  // Fill any <div data-session-replay-button></div> the site wrote. Done here rather than
-  // asked for separately, because a site that put the placeholder in its markup has already
-  // said what it wants and should not also have to call something.
-  renderPlaceholders({ doc });
 
   // Ahead of any press, so the press itself has nothing to wait for. Nobody is looking at
   // the result yet, and a page with no extension simply records that.

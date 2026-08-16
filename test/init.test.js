@@ -13,11 +13,38 @@ const noop = () => {};
 function fakeDocument() {
   const listeners = [];
 
+  // Enough of a node for the button builder to assemble one. These examples are about the
+  // click delegation, so what it looks like does not matter - only that it can be built.
+  const node = () => ({
+    style: {},
+    children: [],
+    attributes: {},
+    setAttribute(k, v) {
+      this.attributes[k] = String(v);
+    },
+    getAttribute: () => null,
+    appendChild(child) {
+      this.children.push(child);
+      return child;
+    },
+    append() {},
+    addEventListener() {},
+    removeEventListener() {},
+    matches: () => false,
+    remove() {}
+  });
+
   return {
     listeners,
     // init() now fills any <div data-session-replay-button></div> the site wrote; these
     // examples are about the click delegation, so there are none to find.
     querySelectorAll: () => [],
+    createElement: node,
+    createElementNS: node,
+    createTextNode: (text) => ({ textContent: text }),
+    defaultView: {
+      matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} })
+    },
     addEventListener(type, fn, capture) {
       listeners.push({ type, fn, capture });
     },
@@ -78,4 +105,22 @@ test('calling it twice does not listen twice', () => {
 
   assert.equal(init({ doc, onTrigger: noop }), false);
   assert.equal(doc.listeners.length, 1);
+});
+
+// An SPA renders its footer after the first run. init() is how it says so, and the guard
+// that stops a second listener must not also stop a second placeholder being filled.
+test('a later call still fills a placeholder that appeared since', () => {
+  const doc = fakeDocument();
+  const filled = [];
+
+  doc.querySelectorAll = () => filled.length ? [] : [{
+    nodeName: 'DIV',
+    getAttribute: () => '',
+    appendChild: (child) => filled.push(child)
+  }];
+
+  init({ doc, onTrigger: noop });
+
+  assert.equal(filled.length, 1);
+  assert.equal(init({ doc, onTrigger: noop }), false);
 });
