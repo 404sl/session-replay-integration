@@ -1112,6 +1112,9 @@ const BUTTON_COMPACT_QUERY = '(max-width: 30rem)';
  * @param {string} [options.offset] distance from the two edges it is pinned to
  * @param {string} [options.zIndex]
  * @param {boolean|string} [options.compact] true, false, or 'auto' to follow the viewport
+ * @param {boolean} [options.inline] sit in the flow where it is placed, rather than pinned
+ *   to a corner - which is what a site gets when it writes an empty
+ *   <div data-session-replay-button></div> and lets us fill it
  * @returns {HTMLButtonElement}
  */
 function createButton(options = {}) {
@@ -1121,15 +1124,19 @@ function createButton(options = {}) {
     label = BUTTON_LABEL,
     offset = '1.25rem',
     zIndex = BUTTON_Z_INDEX,
-    compact = 'auto'
+    compact = 'auto',
+    inline = false
   } = options;
 
   // A position we do not recognise is a typo, and a typo should still produce a button.
   const position = BUTTON_POSITIONS[asked] ? asked : 'bottom-right';
 
   const base = {
-    position: 'fixed',
-    zIndex: String(zIndex),
+    // Inline buttons sit where the site put them, so they take no corner, no z-index and
+    // no shadow: a floating action button announces itself, and one placed deliberately in
+    // a footer should look like it belongs to the footer.
+    position: inline ? 'static' : 'fixed',
+    zIndex: inline ? 'auto' : String(zIndex),
     display: 'inline-flex',
     flexDirection: 'row',
     alignItems: 'center',
@@ -1143,7 +1150,7 @@ function createButton(options = {}) {
     float: 'none',
     textIndent: '0',
     // Never wider than the screen it is pinned to, however long the label is.
-    maxWidth: 'calc(100vw - 2rem)',
+    maxWidth: inline ? '100%' : 'calc(100vw - 2rem)',
     background: BUTTON_COLOR.face,
     color: BUTTON_COLOR.ink,
     border: '0',
@@ -1160,7 +1167,7 @@ function createButton(options = {}) {
     visibility: 'visible',
     transform: 'none',
     animation: 'none',
-    boxShadow: '0 0.35rem 1.1rem rgba(4, 120, 87, 0.34), 0 0 0 1px rgba(4, 120, 87, 0.06)',
+    boxShadow: inline ? 'none' : '0 0.35rem 1.1rem rgba(4, 120, 87, 0.34), 0 0 0 1px rgba(4, 120, 87, 0.06)',
     transition: motionAllowed(doc)
       ? 'background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease'
       : 'none',
@@ -1171,17 +1178,21 @@ function createButton(options = {}) {
 
   const button = doc.createElement('button');
 
-  Object.assign(button.style, base, edges(position, offset));
-  // Safe areas second, so a browser that has never heard of env() has already been given a
-  // plain offset to fall back to. Without this the button sits under the home indicator on
-  // an iPhone, which is a swipe that does something else.
-  Object.assign(button.style, safeEdges(position, offset));
+  Object.assign(button.style, base);
+
+  if (!inline) {
+    Object.assign(button.style, edges(position, offset));
+    // Safe areas second, so a browser that has never heard of env() has already been given
+    // a plain offset to fall back to. Without this the button sits under the home indicator
+    // on an iPhone, which is a swipe that does something else.
+    Object.assign(button.style, safeEdges(position, offset));
+  }
 
   button.type = 'button';
   button.setAttribute('data-sr-trigger', '');
   // Ours to find again, and a hook for a site that wants to move it without keeping the
   // handle we returned.
-  button.setAttribute('data-session-replay-button', position);
+  button.setAttribute('data-session-replay-button', inline ? 'inline' : position);
   // The name stays on the element even when the visible label is dropped on a narrow
   // screen, so the button never becomes an unnamed circle.
   button.setAttribute('aria-label', label);
@@ -1506,6 +1517,52 @@ function svgNode(doc, tag, attributes = {}, styles = null) {
   return node;
 }
 
+// The attribute a site writes to say "put your button here".
+//
+// The whole point is that they write markup and no styling: one empty element, and the
+// button that appears is ours - mark, wording, colours and states. A site that would rather
+// design its own puts data-sr-trigger on whatever it likes instead, and this never runs.
+const BUTTON_PLACEHOLDER = 'data-session-replay-button';
+
+/**
+ * Fill every empty placeholder on the page with the branded button.
+ *
+ * Idempotent by construction: a placeholder with anything in it is left alone, and the
+ * button this puts there is itself a child, so a second pass finds the element occupied
+ * rather than adding a second button.
+ *
+ * @param {Object} [options]
+ * @param {Document} [options.doc]
+ * @param {string} [options.label]
+ * @returns {number} how many were filled
+ */
+function renderPlaceholders({ doc = document, label = BUTTON_LABEL } = {}) {
+  let filled = 0;
+
+  // Only elements written by the site. The button we create carries the same attribute as
+  // its own handle, so it would otherwise be a placeholder for a button inside itself.
+  doc.querySelectorAll(`[${BUTTON_PLACEHOLDER}]:empty`).forEach((slot) => {
+    if (slot.nodeName === 'BUTTON') return;
+
+    const asked = slot.getAttribute(BUTTON_PLACEHOLDER);
+
+    slot.appendChild(
+      createButton({
+        doc,
+        label: slot.getAttribute('data-label') || label,
+        // An empty attribute means "wherever I put this". A corner name means the site
+        // wants it floating, and put the element anywhere convenient to say so.
+        inline: !BUTTON_POSITIONS[asked],
+        position: BUTTON_POSITIONS[asked] ? asked : 'bottom-right'
+      })
+    );
+
+    filled += 1;
+  });
+
+  return filled;
+}
+
 // Session Replay integration: a "report a bug" button for your own site.
 //
 // The button belongs on the page because that is where the bug is. Somebody who has just
@@ -1523,6 +1580,7 @@ function svgNode(doc, tag, attributes = {}, styles = null) {
 // analytics, no beacon, no phone home. Everything it needs to decide is available in the
 // page it is already running in, and a "report a bug" button that reported on its visitors
 // would be a poor joke.
+
 
 
 
@@ -1630,6 +1688,11 @@ function init(options = {}) {
   if (doc[LISTENER_FLAG]) return false;
 
   doc[LISTENER_FLAG] = true;
+
+  // Fill any <div data-session-replay-button></div> the site wrote. Done here rather than
+  // asked for separately, because a site that put the placeholder in its markup has already
+  // said what it wants and should not also have to call something.
+  renderPlaceholders({ doc });
 
   // Ahead of any press, so the press itself has nothing to wait for. Nobody is looking at
   // the result yet, and a page with no extension simply records that.

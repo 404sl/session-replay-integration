@@ -15,6 +15,9 @@ function fakeDocument() {
 
   return {
     listeners,
+    // init() now fills any <div data-session-replay-button></div> the site wrote; these
+    // examples are about the click delegation, so there are none to find.
+    querySelectorAll: () => [],
     addEventListener(type, fn, capture) {
       listeners.push({ type, fn, capture });
     },

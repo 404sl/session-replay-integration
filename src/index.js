@@ -18,6 +18,7 @@
 
 import { detectExtension, isSupportedBrowser, OPEN_EVENT, OPENED_EVENT } from './detect.js';
 import { showSplash } from './splash.js';
+import { renderPlaceholders } from './button.js';
 
 export const TRIGGER_ATTRIBUTE = 'data-sr-trigger';
 
@@ -123,6 +124,11 @@ export function init(options = {}) {
   if (doc[LISTENER_FLAG]) return false;
 
   doc[LISTENER_FLAG] = true;
+
+  // Fill any <div data-session-replay-button></div> the site wrote. Done here rather than
+  // asked for separately, because a site that put the placeholder in its markup has already
+  // said what it wants and should not also have to call something.
+  renderPlaceholders({ doc });
 
   // Ahead of any press, so the press itself has nothing to wait for. Nobody is looking at
   // the result yet, and a page with no extension simply records that.

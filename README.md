@@ -20,7 +20,8 @@ it, and explains where to get it when they do not.
 ```
 
 Any element with `data-sr-trigger` becomes a trigger. Style it however you like — this
-library never touches how your button looks.
+library never touches how your button looks. That is the path for a site that wants its own
+design; the placeholder above is the path for a site that wants none.
 
 ### npm
 
@@ -38,6 +39,23 @@ Importing the module does **not** wire anything on its own. A module that reache
 document when imported would be a poor citizen of somebody else's build; call `init()` when
 your app is ready. The script-tag build above wires itself, because that is what a script
 tag is for.
+
+## The short version
+
+Write one empty element. The button that appears is ours - mark, wording, colours and
+states - and you make no styling decisions at all:
+
+```html
+<script src="https://session-replay.com/sr.js" defer></script>
+
+<div data-session-replay-button></div>
+```
+
+Give the attribute a corner name and it floats there instead:
+
+```html
+<div data-session-replay-button="bottom-right"></div>
+```
 
 ## A button, if you want ours
 
