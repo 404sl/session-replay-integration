@@ -24,6 +24,11 @@ export const TRIGGER_ATTRIBUTE = 'data-sr-trigger';
 // Marks a document as already listening, so calling init() twice is harmless.
 const LISTENER_FLAG = '__sessionReplayDelegated';
 
+// Whether the extension answered last time we asked. Detection runs when init() does, so a
+// press can go straight to asking for the panel rather than spending the gesture on a round
+// trip first. Null until asked; false is a real answer.
+let knownPresent = null;
+
 // How long to wait for the panel to actually open before assuming Chrome refused. The
 // extension answers either way; this is only for the case where nothing answers at all.
 const OPEN_TIMEOUT_MS = 1500;
@@ -49,7 +54,23 @@ export async function isAvailable(options = {}) {
 export async function report(options = {}) {
   const { win = window, doc = document, nav = navigator } = options;
 
+  // Asked before anything is awaited, when we already know the extension is there.
+  //
+  // The gesture is the point. sidePanel.open() needs the user activation Chrome forwards
+  // from the click, and awaiting a round trip first spends it - the request would leave in
+  // a later task, with the activation gone by the time the worker sees it. So detection
+  // happens ahead of the press, and the press itself goes straight out.
+  if (knownPresent) {
+    const early = await requestPanel({ win });
+
+    if (early.opened) return 'opened';
+
+    return blocked(win, doc, early.reason);
+  }
+
   const extension = await detectExtension({ win, ...options });
+
+  knownPresent = Boolean(extension);
 
   if (!extension) {
     const supported = isSupportedBrowser({ nav });
@@ -63,16 +84,17 @@ export async function report(options = {}) {
 
   if (opened) return 'opened';
 
-  // Logged, not shown. Whether Chrome will open a panel for a click that began in a page
-  // is the question this feature turns on, and the answer belongs where a developer can
-  // read it - the visitor only needs to be told what to do instead.
+  return blocked(win, doc, reason);
+}
+
+// Everything that happens when the panel would not open. Reachable from two places now,
+// because a press that already knew the extension was there skips detection entirely.
+function blocked(win, doc, reason) {
+  // Logged, not shown. The visitor needs to know what to do; whoever is integrating needs
+  // to know which rule was hit, and the console is where they look.
   if (reason && win.console) win.console.warn(`[session-replay] panel did not open: ${reason}`);
 
-  // Chrome only lets an extension open its own panel in response to its own button being
-  // pressed. Whether a click that started in the page counts has changed between Chrome
-  // versions, so this path is a real outcome rather than a defensive branch, and it says
-  // what to do instead rather than failing silently.
-  showSplash({ doc, supported: true, message: null, ...blockedMessage() });
+  showSplash({ doc, supported: true, ...blockedMessage() });
 
   return 'blocked';
 }
@@ -101,6 +123,20 @@ export function init(options = {}) {
   if (doc[LISTENER_FLAG]) return false;
 
   doc[LISTENER_FLAG] = true;
+
+  // Ahead of any press, so the press itself has nothing to wait for. Nobody is looking at
+  // the result yet, and a page with no extension simply records that.
+  const win = options.win || globalThis.window;
+
+  if (win) {
+    detectExtension({ ...options, win })
+      .then((found) => {
+        knownPresent = Boolean(found);
+      })
+      .catch(() => {
+        knownPresent = false;
+      });
+  }
 
   // Capture phase, so this runs before frameworks that intercept clicks on the way up.
   // Turbo listens for clicks on the document and would otherwise start a visit to "#"
