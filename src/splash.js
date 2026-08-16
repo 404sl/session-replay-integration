@@ -15,6 +15,8 @@
 // that repaint inline styles, and anything that would need @media is asked of matchMedia
 // instead.
 
+import { copyFor, ENGLISH } from './copy.js';
+
 const STORE_URL =
   'https://chromewebstore.google.com/detail/cpcncaaklnlebendcdejmhaoojoobfnl';
 
@@ -54,41 +56,7 @@ const COLOR = {
   offPaper:   '#f8f9fa'
 };
 
-const COPY = {
-  brand:   'Session Replay',
-  title:   'Report this bug in one click',
-  supported:
-    'Session Replay is a free Chrome extension. Press the button, it captures the bug - ' +
-    'nobody has to ask you what you were doing when it happened.',
-  captures: [
-    'A screenshot, or a short recording of what went wrong',
-    'The console errors and the network requests behind them',
-    'Every click, scroll and keystroke that led up to it',
-    'Browser, operating system and screen size, already filled in'
-  ],
-  free:        'Free, and no account is needed to send a report.',
-  install:     'Add to Chrome',
-  installHint: 'opens the Chrome Web Store in a new tab',
-  dismiss:     'Not now',
 
-  unsupportedTitle: 'This browser cannot run it',
-  unsupported:
-    'Session Replay is a Chrome extension, and this browser cannot install one. Chrome, ' +
-    'Edge, Brave, Opera and Arc all can.',
-  unsupportedNext:
-    'Copy the link to this page, open it in one of those, and report the bug from there.',
-  copy:         'Copy page link',
-  copied:       'Link copied.',
-  copyManually: 'The link is selected - press Ctrl+C, or Cmd+C on a Mac, to copy it.',
-
-  blockedTitle: 'Open it from the toolbar',
-  panelBlocked:
-    'Session Replay is installed. Open it from the toolbar - Chrome only lets an extension ' +
-    'open its own panel from its own button.',
-
-  close: 'Close',
-  gotIt: 'Got it'
-};
 
 // Set on every element we make, before anything specific to that element.
 //
@@ -140,6 +108,12 @@ const RESET = {
 // does not exist.
 const FOCUSABLE = 'a[href], button, [tabindex]:not([tabindex="-1"])';
 
+// The words this overlay is being built with. Module scope rather than threaded through
+// nine builders, which is safe for the same reason the singleton below is: one overlay
+// exists at a time, and showSplash sets this before it builds anything. English until then,
+// so nothing can read undefined.
+let COPY = ENGLISH;
+
 // Only one of these at a time. A second press while the first is still open would otherwise
 // stack two dialogs, and the second one's scroll lock would remember the first one's locked
 // state as the thing to restore.
@@ -154,8 +128,12 @@ let openSplash = null;
  * @param {string} [options.message] replaces the body, for the panel-blocked case
  * @returns {Function} closes it
  */
-export function showSplash({ doc = document, supported = true, message = null } = {}) {
+export function showSplash({ doc = document, supported = true, message = null, lang = null } = {}) {
   if (openSplash) openSplash();
+
+  // Resolved per call rather than once at load: the page decides the language, and a page
+  // that sets it after this script ran - or changes it - should still be answered in it.
+  COPY = copyFor({ doc, lang });
 
   const win = doc.defaultView || null;
   const returnFocusTo = doc.activeElement;
@@ -282,7 +260,7 @@ export function showSplash({ doc = document, supported = true, message = null } 
   return close;
 }
 
-export { COPY, STORE_URL };
+export { STORE_URL };
 
 // The header carries the brand, because this is the one moment the visitor meets the
 // product. Emerald on white is a shape colour, not a text colour, so the band is the darker

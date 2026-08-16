@@ -144,6 +144,19 @@ a stylesheet — though a policy without `'unsafe-inline'` for styles will need
 If your policy will not allow a third-party script at all, install from npm and bundle it
 with your own code.
 
+## It speaks the page's language
+
+The overlay reads `document.documentElement.lang` and answers in it — English, Russian,
+German, Spanish, French, Italian or Portuguese, falling back to English for anything else.
+A region tag like `pt-BR` is read as its base language.
+
+The **page** is asked rather than the browser. `navigator.language` is what the reader
+prefers, which is a different question, and answering it would have the overlay disagree
+with the paragraph next to it.
+
+So set `lang` on your `<html>` — worth doing regardless, since screen readers and
+hyphenation need it too.
+
 ## Browser support
 
 Chromium browsers — Chrome, Edge, Brave, Opera, Arc. The extension is a Chrome extension;

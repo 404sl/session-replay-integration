@@ -1,7 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { showSplash, COPY } from '../src/splash.js';
+import { showSplash } from '../src/splash.js';
+import { copyFor, pageLanguage } from '../src/copy.js';
+
+// The overlay resolves its words from the page; the tests read the same source.
+const COPY = copyFor({ doc: { documentElement: { getAttribute: () => 'en' } } });
 import {
   createButton,
   renderPlaceholders,
@@ -74,6 +78,7 @@ function fakeDom() {
 
   const body = makeNode('BODY');
   const documentElement = makeNode('HTML');
+  documentElement.attributes.lang = 'en';
 
   const doc = {
     created,
@@ -248,4 +253,36 @@ test('a placeholder that already has something in it is left alone', () => {
   doc.querySelectorAll = () => [];
 
   assert.equal(renderPlaceholders({ doc }), 0);
+});
+
+// An English overlay on a Russian page announces that it was not written for the person
+// reading it, which is a poor way to ask somebody to install software.
+test('speaks the language the page says it is in', () => {
+  const doc = fakeDom();
+  doc.documentElement.attributes.lang = 'ru';
+
+  showSplash({ doc, supported: true });
+
+  assert.ok(textOf(doc).includes(copyFor({ lang: 'ru' }).install));
+});
+
+test('falls back to English for a language we do not have', () => {
+  const doc = fakeDom();
+  doc.documentElement.attributes.lang = 'ja';
+
+  showSplash({ doc, supported: true });
+
+  assert.ok(textOf(doc).includes('Add to Chrome'));
+});
+
+// pt-BR is answered in Portuguese, which is the better of the two wrong answers available.
+test('reads a region-tagged language as its base', () => {
+  assert.equal(pageLanguage({ documentElement: { getAttribute: () => 'pt-BR' } }), 'pt');
+  assert.equal(copyFor({ lang: 'pt-BR' }).install, 'Adicionar ao Chrome');
+});
+
+// A page that says nothing gets English rather than nothing.
+test('survives a page that declares no language', () => {
+  assert.equal(pageLanguage({ documentElement: { getAttribute: () => null } }), '');
+  assert.equal(copyFor({ lang: '' }).install, 'Add to Chrome');
 });
