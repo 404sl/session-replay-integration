@@ -12,7 +12,7 @@ import { dirname, join } from 'node:path';
 const here = dirname(fileURLToPath(import.meta.url));
 
 // Dependency order, because concatenation has no module graph to work it out from.
-const SOURCES = ['src/detect.js', 'src/splash.js', 'src/index.js'];
+const SOURCES = ['src/detect.js', 'src/splash.js', 'src/button.js', 'src/index.js'];
 
 // Strips the module syntax that only makes sense across files. Everything ends up in one
 // scope inside one IIFE, so the names resolve without it.
@@ -60,10 +60,14 @@ ${parts.join('\n\n')}
 
   // For pages that render their button later, or want to trigger a report from their own
   // code without an element at all.
+  // mountButton is offered, never called for them. A script tag that put a floating
+  // button on somebody's page uninvited would be an advert, not an integration.
   window.SessionReplay = Object.assign(window.SessionReplay || {}, {
     report,
     init,
-    isAvailable
+    isAvailable,
+    createButton,
+    mountButton
   });
 }());
 `;
