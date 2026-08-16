@@ -39,6 +39,30 @@ document when imported would be a poor citizen of somebody else's build; call `i
 your app is ready. The script-tag build above wires itself, because that is what a script
 tag is for.
 
+## A button, if you want ours
+
+Style your own trigger, or take a floating one:
+
+```html
+<script src="https://session-replay.com/sr.js" defer></script>
+<script>
+  addEventListener('load', () => SessionReplay.mountButton());
+</script>
+```
+
+```js
+import { mountButton } from '@404sl/session-replay-integration/button';
+
+const { remove } = mountButton({ position: 'bottom-left' });
+```
+
+`position` is `bottom-right` (default), `bottom-left`, `top-right` or `top-left`. It carries
+`data-sr-trigger` itself, so nothing else needs wiring, and it shrinks to a circle on narrow
+screens.
+
+Nothing mounts it for you. A script tag that put a floating button on somebody's page
+uninvited would be an advert rather than an integration.
+
 ## What happens when it is pressed
 
 1. It asks the extension, on this page, whether it is there.
@@ -65,7 +89,9 @@ import { report, isAvailable, init } from '@404sl/session-replay-integration';
 
 await isAvailable();  // is the extension on this page?
 await report();       // 'opened' | 'blocked' | 'missing' | 'unsupported'
-init();               // wire [data-sr-trigger] elements; safe to call again
+init();               // listen for [data-sr-trigger] presses; safe to call again
+mountButton();        // our floating button, if you want one
+createButton();       // the element on its own, to place yourself
 ```
 
 `report()` is there for sites that would rather trigger from their own code — a menu item,
