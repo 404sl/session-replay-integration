@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # No install step: this package has no dependencies, which is the point of it.
+      - run: npm test
+
+      # The built file is committed, because a script tag loads it straight from here. If
+      # a change to src did not come with its rebuild, the file sites are served would be
+      # older than the code in the repo - so the build runs and the diff must be empty.
+      - name: dist is in step with src
+        run: |
+          npm run build
+          git diff --exit-code dist/ || {
+            echo "::error::dist/ is out of date. Run 'npm run build' and commit the result."
+            exit 1
+          }

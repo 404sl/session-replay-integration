@@ -1,0 +1,49 @@
+name: Release
+
+# Driven by the tag rather than by a merge. A version is a deliberate act: pushing v0.2.0
+# is somebody saying "this is 0.2.0", and nothing is published without that.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # to create the GitHub release
+  id-token: write # npm provenance, so the package can be traced to this workflow
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+
+      - run: npm test
+
+      # A tag that disagrees with package.json means one of the two is wrong, and guessing
+      # which would publish a version nobody asked for.
+      - name: The tag and package.json agree
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          packaged="$(node -p "require('./package.json').version")"
+          if [ "$tagged" != "$packaged" ]; then
+            echo "::error::tag is v$tagged but package.json says $packaged"
+            exit 1
+          fi
+
+      - name: dist is in step with src
+        run: |
+          npm run build
+          git diff --exit-code dist/
+
+      - run: npm publish --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: GitHub release
+        run: gh release create "$GITHUB_REF_NAME" --generate-notes
+        env:
+          GH_TOKEN: ${{ github.token }}
