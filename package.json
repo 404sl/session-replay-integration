@@ -9,7 +9,8 @@
     ".": "./src/index.js",
     "./dist/session-replay.js": "./dist/session-replay.js",
     "./button": "./src/button.js",
-    "./splash": "./src/splash.js"
+    "./splash": "./src/splash.js",
+    "./copy": "./src/copy.js"
   },
   "files": [
     "src",
