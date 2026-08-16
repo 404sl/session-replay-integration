@@ -7,7 +7,9 @@
   "module": "src/index.js",
   "exports": {
     ".": "./src/index.js",
-    "./dist/session-replay.js": "./dist/session-replay.js"
+    "./dist/session-replay.js": "./dist/session-replay.js",
+    "./button": "./src/button.js",
+    "./splash": "./src/splash.js"
   },
   "files": [
     "src",
