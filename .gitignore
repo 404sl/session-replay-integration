@@ -1,0 +1,5 @@
+node_modules/
+
+# dist/ is committed on purpose: it is the file sites load from a script tag, and the
+# hosted copy is deployed from it. Building it is one command with no dependencies, but a
+# repo whose advertised install path is missing from a clone is a repo that lies.

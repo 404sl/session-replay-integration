@@ -1,0 +1,112 @@
+# Session Replay integration
+
+A **"Report a bug"** button for your own site.
+
+Somebody who has just hit a problem should not have to know that a browser extension
+exists, find its icon in a toolbar, and work out that it applies to them. They should be
+able to press the thing that says *report a bug*.
+
+That is all this does. It opens the [Session Replay][site] extension when the visitor has
+it, and explains where to get it when they do not.
+
+## Install
+
+### A script tag
+
+```html
+<script src="https://session-replay.com/sr.js" defer></script>
+
+<button data-sr-trigger>Report a bug</button>
+```
+
+Any element with `data-sr-trigger` becomes a trigger. Style it however you like — this
+library never touches how your button looks.
+
+### npm
+
+```sh
+npm install @404sl/session-replay-integration
+```
+
+```js
+import { init } from '@404sl/session-replay-integration';
+
+init(); // wires every [data-sr-trigger] on the page
+```
+
+Importing the module does **not** wire anything on its own. A module that reached into the
+document when imported would be a poor citizen of somebody else's build; call `init()` when
+your app is ready. The script-tag build above wires itself, because that is what a script
+tag is for.
+
+## What happens when it is pressed
+
+1. It asks the extension, on this page, whether it is there.
+2. If it is, the extension opens its panel and the visitor captures the bug.
+3. If it is not, an overlay explains what it is and links to the Chrome Web Store.
+4. If the browser could never run it — Safari, Firefox — the overlay says so instead of
+   offering an install that would not work.
+
+## It sends nothing anywhere
+
+There is no network request in this library. No analytics, no beacon, no phone home, no
+cookie. Everything it needs is already in the page it is running in.
+
+Detection is a question asked of the page, not of us: the extension's content script
+answers a `CustomEvent`. It is deliberately **not** done with `externally_connectable`
+messaging, because the wildcard form of that would let any site on the internet probe
+whether a visitor has the extension installed. This channel only answers pages that have
+chosen to load this library.
+
+## API
+
+```js
+import { report, isAvailable, init } from '@404sl/session-replay-integration';
+
+await isAvailable();  // is the extension on this page?
+await report();       // 'opened' | 'blocked' | 'missing' | 'unsupported'
+init();               // wire [data-sr-trigger] elements; safe to call again
+```
+
+`report()` is there for sites that would rather trigger from their own code — a menu item,
+a keyboard shortcut, an error boundary — than from an element attribute.
+
+### `'blocked'`
+
+Chrome only lets an extension open its own side panel in response to a user gesture, and
+whether a click that began in the page still counts has changed between Chrome versions.
+When the panel refuses to open, `report()` returns `'blocked'` and the overlay tells the
+visitor to open it from the toolbar instead. It is a real outcome, not a defensive branch.
+
+## Content Security Policy
+
+The script-tag build needs `script-src https://session-replay.com`. The overlay styles
+elements inline rather than shipping a stylesheet, so no `style-src` entry is required for
+a stylesheet — though a policy without `'unsafe-inline'` for styles will need
+`style-src-attr 'unsafe-inline'`.
+
+If your policy will not allow a third-party script at all, install from npm and bundle it
+with your own code.
+
+## Browser support
+
+Chromium browsers — Chrome, Edge, Brave, Opera, Arc. The extension is a Chrome extension;
+this library detects the rest and says so plainly rather than offering an install that
+cannot work.
+
+## Development
+
+```sh
+npm test     # node's own test runner, no dependencies
+npm run build  # produces dist/session-replay.js
+```
+
+There are no dependencies, and there is no bundler. This is a small amount of code that
+goes on other people's pages, and every dependency it took on would be one they took on
+too.
+
+## Licence
+
+MIT. See [LICENSE](LICENSE).
+
+[site]: https://session-replay.com

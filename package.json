@@ -1,0 +1,37 @@
+{
+  "name": "@404sl/session-replay-integration",
+  "version": "0.1.0",
+  "description": "A \"report a bug\" button for your own site, wired to the Session Replay extension.",
+  "type": "module",
+  "main": "src/index.js",
+  "module": "src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./dist/session-replay.js": "./dist/session-replay.js"
+  },
+  "files": [
+    "src",
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "node build.mjs",
+    "test": "node --test"
+  },
+  "keywords": [
+    "bug-report",
+    "session-replay",
+    "chrome-extension",
+    "feedback"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/404sl/session-replay-integration.git"
+  },
+  "homepage": "https://session-replay.com",
+  "license": "MIT",
+  "sideEffects": [
+    "./dist/session-replay.js"
+  ]
+}
