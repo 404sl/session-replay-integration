@@ -1,0 +1,179 @@
+/**
+ * Session Replay integration 0.2.0 - the branded "report a bug" button.
+ * https://github.com/404sl/session-replay-integration
+ *
+ * For the markup-first path: write the button into your own template and load this, and the
+ * "Powered by" link is in your HTML rather than added by a script afterwards.
+ *
+ *   <div class="sr-report">
+ *     <button type="button" data-sr-trigger class="sr-report-trigger">
+ *       <span class="sr-report-label">Report a bug</span>
+ *     </button>
+ *     <small class="sr-report-by">Powered by <a class="sr-report-link" href="…">Session Replay</a></small>
+ *   </div>
+ *
+ * Generated from src/styles.js. Do not edit: run npm run build.
+ *
+ * MIT licensed.
+ */
+
+.sr-report {
+  position: static;
+  z-index: auto;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3125rem;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  max-width: 100%;
+  font: 400 0.6875rem/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
+  text-align: center;
+}
+
+.sr-report-trigger {
+  position: static;
+  display: inline-flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0.6875rem 1.05rem;
+  min-width: 0;
+  min-height: 2.75rem;
+  float: none;
+  text-indent: 0;
+  max-width: 100%;
+  background: #047857;
+  color: #ffffff;
+  border: 0;
+  border-radius: 999px;
+  font: 700 0.9375rem/1.2 system-ui, -apple-system, "Segoe UI", sans-serif;
+  letter-spacing: normal;
+  text-transform: none;
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  outline: none;
+  opacity: 1;
+  visibility: visible;
+  transform: none;
+  animation: none;
+  box-shadow: none;
+  transition: background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  -webkit-appearance: none;
+  appearance: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sr-report-trigger:hover {
+  background: #065f46;
+  box-shadow: 0 0.55rem 1.4rem rgba(4, 120, 87, 0.42), 0 0 0 1px rgba(4, 120, 87, 0.06);
+  transform: translateY(-1px);
+}
+
+.sr-report-trigger:active {
+  transform: translateY(1px);
+}
+
+/* focus-visible, not focus: a mouse click on a button should not leave a ring behind it.
+   The inline path cannot ask this question - it has no pseudo-classes - so it paints the
+   ring on focus and accepts the difference. */
+.sr-report-trigger:focus-visible {
+  background: #065f46;
+  box-shadow: 0 0 0 3px #34d399, 0 0 0 5px rgba(4, 120, 87, 0.45);
+}
+
+/* The mark, as a data URI on a pseudo element: a stylesheet cannot build the masked SVG
+   that the JavaScript path does, and a snippet with the whole logo pasted into it would not
+   be four lines any more. Encoded rather than base64'd so it stays readable and gzips.
+ *
+ * :not([data-sr-mark]) because a page can load both this file and the script - the site's
+ * snippet does exactly that - and a button the script built already has a real SVG mark in
+ * it. Without this it gets two, side by side. Inline styles cannot switch a pseudo element
+ * off, so the script says "mine has one" with an attribute and this rule steps aside. */
+.sr-report-trigger:not([data-sr-mark])::before {
+  content: "";
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 auto;
+  background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2064%2064%22%3E%3Cdefs%3E%3Cmask%20id%3D%22m%22%20maskUnits%3D%22userSpaceOnUse%22%20x%3D%220%22%20y%3D%220%22%20width%3D%2264%22%20height%3D%2264%22%3E%3Crect%20width%3D%2264%22%20height%3D%2264%22%20fill%3D%22%23000%22%2F%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20rx%3D%2216%22%20fill%3D%22%23fff%22%2F%3E%3Cg%20fill%3D%22none%22%20stroke%3D%22%23000%22%20stroke-width%3D%225%22%20stroke-linecap%3D%22round%22%3E%3Cpath%20d%3D%22M15%2024%20V19%20A4%204%200%200%201%2019%2015%20H24%22%2F%3E%3Cpath%20d%3D%22M40%2015%20H45%20A4%204%200%200%201%2049%2019%20V24%22%2F%3E%3Cpath%20d%3D%22M49%2040%20V45%20A4%204%200%200%201%2045%2049%20H40%22%2F%3E%3Cpath%20d%3D%22M24%2049%20H19%20A4%204%200%200%201%2015%2045%20V40%22%2F%3E%3C%2Fg%3E%3Cpath%20d%3D%22M28%2026%20L40%2032%20L28%2038%20Z%22%20fill%3D%22%23000%22%20stroke%3D%22%23000%22%20stroke-width%3D%224%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fmask%3E%3C%2Fdefs%3E%3Crect%20x%3D%223%22%20y%3D%223%22%20width%3D%2258%22%20height%3D%2258%22%20rx%3D%2216%22%20fill%3D%22%23ffffff%22%20mask%3D%22url(%23m)%22%2F%3E%3C%2Fsvg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.sr-report-label {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.sr-report-by {
+  display: block;
+  margin: 0;
+  padding: 0;
+  font: 400 0.6875rem/1.3 system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #4b5563;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+}
+
+.sr-report-link {
+  color: #047857;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 0.15em;
+}
+
+.sr-report-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* A pill wide enough to read is also wide enough to cover whatever the page put in that
+   corner, and on a phone that corner is usually the important one. The attribution goes
+   with the label: a line of small print under a 48px circle is wider than the circle. */
+@media (max-width: 30rem) {
+  .sr-report-trigger {
+    gap: 0;
+    padding: 0;
+    width: 3rem;
+    height: 3rem;
+    min-height: 3rem;
+    border-radius: 999px;
+  }
+
+  .sr-report-label {
+    display: none;
+  }
+
+  .sr-report-by {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sr-report-trigger {
+    transition: none;
+  }
+
+  .sr-report-trigger:hover {
+    transform: none;
+  }
+
+  .sr-report-trigger:active {
+    transform: none;
+  }
+}
