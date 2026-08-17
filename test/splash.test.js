@@ -186,13 +186,79 @@ test('every mark gets an id of its own', () => {
   assert.notDeepEqual(first, again);
 });
 
+// Walks a stub subtree, since the wrapper now has descendants worth asserting about.
+function descendants(node, found = []) {
+  (node.children || []).forEach((child) => {
+    found.push(child);
+    descendants(child, found);
+  });
+
+  return found;
+}
+
+const triggerIn = (root) =>
+  descendants(root).find((node) => node.attributes?.['data-sr-trigger'] !== undefined);
+
+const linkIn = (root) => descendants(root).find((node) => node.nodeName === 'A');
+
 test('the button builds, and the delegated listener will find it', () => {
   const doc = fakeDom();
 
-  const button = createButton({ doc });
+  const root = createButton({ doc });
+  const trigger = triggerIn(root);
+
+  assert.ok(trigger, 'no element carries the trigger attribute');
+  assert.equal(trigger.attributes['data-sr-trigger'], '');
+  assert.ok(trigger.attributes['aria-label']);
+});
+
+test('it credits us, with a link somebody can follow', () => {
+  const doc = fakeDom();
+
+  const link = linkIn(createButton({ doc }));
+
+  assert.ok(link, 'no attribution link');
+  assert.match(link.href, /^https:\/\/session-replay\.com\//);
+  assert.match(link.href, /utm_source=integration/);
+  assert.equal(link.textContent, 'Session Replay');
+  // target="_blank" without noopener hands the opened page a handle on the window it came
+  // from, and that window belongs to a customer of ours.
+  assert.equal(link.rel, 'noopener');
+});
+
+// An <a> inside a <button> is interactive content nested in interactive content: the spec
+// forbids it, and where browsers disagree it is the link that loses. This is the assertion
+// that keeps the two as siblings if anybody ever tidies the markup.
+test('the link is never inside the button', () => {
+  const doc = fakeDom();
+
+  const root = createButton({ doc });
+  const trigger = triggerIn(root);
+
+  assert.equal(linkIn(trigger), undefined);
+  assert.ok(linkIn(root), 'the link should still be in the wrapper');
+});
+
+test('attribution can be turned off, and then the button is the whole thing', () => {
+  const doc = fakeDom();
+
+  const button = createButton({ doc, attribution: false });
 
   assert.equal(button.attributes['data-sr-trigger'], '');
-  assert.ok(button.attributes['aria-label']);
+  assert.equal(linkIn(button), undefined);
+  // The handle moves back onto the button, or nothing could find or remove it.
+  assert.equal(button.attributes['data-session-replay-button'], 'bottom-right');
+});
+
+// Under a circle, a line reading "Powered by Session Replay" is wider than the thing it
+// credits.
+test('the credit goes away when the button shrinks to a circle', () => {
+  const doc = fakeDom();
+
+  const root = createButton({ doc, compact: true });
+  const credit = descendants(root).find((node) => node.nodeName === 'SMALL');
+
+  assert.equal(credit.style.display, 'none');
 });
 
 test('an unrecognised position falls back rather than going unplaced', () => {
@@ -215,7 +281,8 @@ test('an empty placeholder is filled with the branded button', () => {
 
   assert.equal(renderPlaceholders({ doc }), 1);
   assert.equal(slot.children.length, 1);
-  assert.equal(slot.children[0].attributes['data-sr-trigger'], '');
+  assert.ok(triggerIn(slot), 'the filled placeholder has no trigger in it');
+  assert.ok(linkIn(slot), 'the filled placeholder has no attribution in it');
 });
 
 // It sits in the flow rather than floating: a button placed deliberately in a footer should
@@ -245,6 +312,21 @@ test('a placeholder naming a corner floats there', () => {
 
   assert.equal(button.style.position, 'fixed');
   assert.ok(button.style.left);
+});
+
+// The markup-only way to say it, for a plan that has paid to drop the credit. Without this
+// the only way out is the JavaScript call the one-element install exists to avoid.
+test('a placeholder can decline the credit in markup', () => {
+  const doc = fakeDom();
+  const slot = doc.createElement('div');
+  slot.attributes[BUTTON_PLACEHOLDER] = '';
+  slot.attributes['data-attribution'] = 'false';
+  doc.querySelectorAll = (selector) => (selector.includes(BUTTON_PLACEHOLDER) ? [slot] : []);
+
+  renderPlaceholders({ doc });
+
+  assert.ok(triggerIn(slot), 'still needs a trigger');
+  assert.equal(linkIn(slot), undefined, 'the credit should be gone');
 });
 
 test('a placeholder that already has something in it is left alone', () => {

@@ -19,18 +19,25 @@
 // script-tag build concatenates the source files into one scope, so a second `element` or a
 // second `COLOR` would be a redeclaration rather than a private helper.
 
+import {
+  ATTRIBUTION_NAME,
+  ATTRIBUTION_PREFIX,
+  ATTRIBUTION_URL,
+  BUTTON_CLASS,
+  BUTTON_COLOR,
+  BUTTON_Z_INDEX,
+  MARK_BRACKETS,
+  MARK_TRIANGLE,
+  attributionStyle,
+  compactTriggerStyle,
+  labelStyle,
+  linkStyle,
+  rootStyle,
+  triggerStates,
+  triggerStyle
+} from './styles.js';
+
 const BUTTON_SVG_NS = 'http://www.w3.org/2000/svg';
-
-const BUTTON_FONT = 'system-ui, -apple-system, "Segoe UI", sans-serif';
-
-// #059669 is the brand emerald and it is 3.8:1 on white - a shape colour. White on the step
-// darker, #047857, is 5.5:1, which is what a button with words on it needs.
-const BUTTON_COLOR = {
-  face:    '#047857',
-  hover:   '#065f46',
-  ring:    '#34d399',
-  ink:     '#ffffff'
-};
 
 const BUTTON_LABEL = 'Report a bug';
 
@@ -43,11 +50,6 @@ const BUTTON_POSITIONS = {
   'top-left':     ['top', 'left']
 };
 
-// Under the overlay's 2147483000, because pressing this button is what opens that overlay
-// and a trigger that floats above its own dialog is a trap. Still above the furniture of an
-// ordinary page.
-const BUTTON_Z_INDEX = '2147482000';
-
 // Below this the label is dropped and the button becomes a mark in a circle. A pill wide
 // enough to read is also wide enough to sit on top of whatever the page put in that corner,
 // and on a phone that corner is usually the important one.
@@ -59,6 +61,12 @@ const BUTTON_COMPACT_QUERY = '(max-width: 30rem)';
  * Returns the element without putting it anywhere, so it can be placed in a container of
  * the site's choosing - a footer, a shadow root, a portal - rather than on the body.
  *
+ * With attribution on - the default - what comes back is a wrapper holding the trigger and
+ * a "Powered by Session Replay" line. The link is a sibling of the button rather than
+ * inside it: an <a> inside a <button> is interactive content nested in interactive content,
+ * which the HTML spec forbids and browsers disagree about. Where they disagree it is the
+ * link that loses - unreachable by keyboard, or a click that fires the trigger as well.
+ *
  * @param {Object} [options]
  * @param {Document} [options.doc]
  * @param {string} [options.position] bottom-right, bottom-left, top-right or top-left
@@ -69,7 +77,10 @@ const BUTTON_COMPACT_QUERY = '(max-width: 30rem)';
  * @param {boolean} [options.inline] sit in the flow where it is placed, rather than pinned
  *   to a corner - which is what a site gets when it writes an empty
  *   <div data-session-replay-button></div> and lets us fill it
- * @returns {HTMLButtonElement}
+ * @param {boolean} [options.attribution] show the "Powered by" line. On by default. This
+ *   library cannot check anybody's plan - it is open source, it runs on the visitor's
+ *   machine and it makes no network request - so this is an honesty setting, not a lock.
+ * @returns {HTMLElement} the wrapper, or the button itself when attribution is off
  */
 export function createButton(options = {}) {
   const {
@@ -79,74 +90,25 @@ export function createButton(options = {}) {
     offset = '1.25rem',
     zIndex = BUTTON_Z_INDEX,
     compact = 'auto',
-    inline = false
+    inline = false,
+    attribution = true
   } = options;
 
   // A position we do not recognise is a typo, and a typo should still produce a button.
   const position = BUTTON_POSITIONS[asked] ? asked : 'bottom-right';
 
-  const base = {
-    // Inline buttons sit where the site put them, so they take no corner, no z-index and
-    // no shadow: a floating action button announces itself, and one placed deliberately in
-    // a footer should look like it belongs to the footer.
-    position: inline ? 'static' : 'fixed',
-    zIndex: inline ? 'auto' : String(zIndex),
-    display: 'inline-flex',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '0.5rem',
-    boxSizing: 'border-box',
-    margin: '0',
-    padding: '0.6875rem 1.05rem',
-    minWidth: '0',
-    minHeight: '2.75rem',
-    float: 'none',
-    textIndent: '0',
-    // Never wider than the screen it is pinned to, however long the label is.
-    maxWidth: inline ? '100%' : 'calc(100vw - 2rem)',
-    background: BUTTON_COLOR.face,
-    color: BUTTON_COLOR.ink,
-    border: '0',
-    borderRadius: '999px',
-    font: `700 0.9375rem/1.2 ${BUTTON_FONT}`,
-    letterSpacing: 'normal',
-    textTransform: 'none',
-    textDecoration: 'none',
-    textAlign: 'center',
-    whiteSpace: 'nowrap',
-    cursor: 'pointer',
-    outline: 'none',
-    opacity: '1',
-    visibility: 'visible',
-    transform: 'none',
-    animation: 'none',
-    boxShadow: inline ? 'none' : '0 0.35rem 1.1rem rgba(4, 120, 87, 0.34), 0 0 0 1px rgba(4, 120, 87, 0.06)',
-    transition: motionAllowed(doc)
-      ? 'background-color 140ms ease, box-shadow 140ms ease, transform 140ms ease'
-      : 'none',
-    WebkitAppearance: 'none',
-    appearance: 'none',
-    WebkitTapHighlightColor: 'transparent'
-  };
+  const motion = motionAllowed(doc);
+  // The trigger's own look, from the file the stylesheet is generated from, so a pasted
+  // snippet and a mounted button cannot end up looking like two different products.
+  const base = triggerStyle({ inline, motion });
 
   const button = doc.createElement('button');
 
   Object.assign(button.style, base);
 
-  if (!inline) {
-    Object.assign(button.style, edges(position, offset));
-    // Safe areas second, so a browser that has never heard of env() has already been given
-    // a plain offset to fall back to. Without this the button sits under the home indicator
-    // on an iPhone, which is a swipe that does something else.
-    Object.assign(button.style, safeEdges(position, offset));
-  }
-
   button.type = 'button';
+  button.className = BUTTON_CLASS.trigger;
   button.setAttribute('data-sr-trigger', '');
-  // Ours to find again, and a hook for a site that wants to move it without keeping the
-  // handle we returned.
-  button.setAttribute('data-session-replay-button', inline ? 'inline' : position);
   // The name stays on the element even when the visible label is dropped on a narrow
   // screen, so the button never becomes an unnamed circle.
   button.setAttribute('aria-label', label);
@@ -154,43 +116,71 @@ export function createButton(options = {}) {
 
   const text = doc.createElement('span');
 
-  Object.assign(text.style, {
-    display: 'inline',
-    margin: '0',
-    padding: '0',
-    font: 'inherit',
-    color: 'inherit',
-    letterSpacing: 'normal',
-    textTransform: 'none',
-    whiteSpace: 'nowrap'
-  });
+  Object.assign(text.style, labelStyle());
+  text.className = BUTTON_CLASS.label;
   text.textContent = label;
 
   // A white tile: the brackets and the play triangle are cut out of the mark, so the
   // button's own emerald shows through them.
   button.append(brandMark(doc, 20, BUTTON_COLOR.ink), text);
+  // Tells the stylesheet not to add its own: a page that loads both files would otherwise
+  // show this mark next to the one the CSS draws.
+  button.setAttribute('data-sr-mark', 'svg');
 
-  paintStates(button, {
-    base,
-    hover: {
-      background: BUTTON_COLOR.hover,
-      boxShadow: '0 0.55rem 1.4rem rgba(4, 120, 87, 0.42), 0 0 0 1px rgba(4, 120, 87, 0.06)',
-      transform: motionAllowed(doc) ? 'translateY(-1px)' : 'none'
-    },
-    active: { transform: 'translateY(1px)' },
-    // Our own focus ring. The browser's would be removed by any host page with a
-    // `*:focus { outline: none }` rule, and there is no rule of ours to answer that with.
-    focus: {
-      background: BUTTON_COLOR.hover,
-      boxShadow: `0 0 0 3px ${BUTTON_COLOR.ring}, 0 0 0 5px rgba(4, 120, 87, 0.45)`
-    }
-  });
+  const states = triggerStates({ motion });
+
+  paintStates(button, { base, hover: states.hover, active: states.active, focus: states.focus });
 
   applyCompact(button, text, compact === true);
 
-  if (compact === 'auto') watchWidth(doc, button, text);
+  // Without attribution the button is the whole thing, and it carries the handle and the
+  // corner itself - which is what it did before this option existed.
+  if (!attribution) {
+    button.setAttribute('data-session-replay-button', inline ? 'inline' : position);
+    pin(button, { inline, position, offset, zIndex });
 
-  return button;
+    if (compact === 'auto') watchWidth(doc, button, text, null);
+
+    return button;
+  }
+
+  const root = doc.createElement('div');
+
+  Object.assign(root.style, rootStyle({ inline }));
+  if (!inline) root.style.zIndex = String(zIndex);
+  root.className = BUTTON_CLASS.root;
+  // Ours to find again, and a hook for a site that wants to move it without keeping the
+  // handle we returned. On the wrapper now, so removing the handle removes the line too.
+  root.setAttribute('data-session-replay-button', inline ? 'inline' : position);
+
+  pin(root, { inline, position, offset, zIndex });
+
+  const credit = doc.createElement('small');
+
+  Object.assign(credit.style, attributionStyle());
+  credit.className = BUTTON_CLASS.attribution;
+
+  const link = doc.createElement('a');
+
+  Object.assign(link.style, linkStyle());
+  link.className = BUTTON_CLASS.link;
+  link.href = ATTRIBUTION_URL;
+  link.textContent = ATTRIBUTION_NAME;
+  // A link out of somebody else's page opens in a tab of its own: a visitor who was halfway
+  // through reporting a bug should not lose the page they were reporting it about. noopener
+  // because target="_blank" without it hands us a handle on their window.
+  link.target = '_blank';
+  link.rel = 'noopener';
+
+  credit.append(doc.createTextNode(ATTRIBUTION_PREFIX), link);
+  root.append(button, credit);
+
+  // The credit hides with the label when the button shrinks to a circle - a line of small
+  // print is wider than the circle it would sit under.
+  if (compact === true) credit.style.display = 'none';
+  if (compact === 'auto') watchWidth(doc, button, text, credit);
+
+  return root;
 }
 
 /**
@@ -228,6 +218,20 @@ export function mountButton(options = {}) {
 }
 
 export { BUTTON_POSITIONS, BUTTON_LABEL };
+
+// Pins whichever element is the outermost one - the wrapper when there is a credit line,
+// the button when there is not - to its corner. An inline button is pinned to nothing.
+function pin(node, { inline, position, offset, zIndex }) {
+  if (inline) return;
+
+  node.style.position = 'fixed';
+  node.style.zIndex = String(zIndex);
+  Object.assign(node.style, edges(position, offset));
+  // Safe areas second, so a browser that has never heard of env() has already been given a
+  // plain offset to fall back to. Without this the button sits under the home indicator on
+  // an iPhone, which is a swipe that does something else.
+  Object.assign(node.style, safeEdges(position, offset));
+}
 
 // Which two edges the button is pinned to. The other two are said explicitly rather than
 // left out: a host page rule on `button` could have set the ones we do not want.
@@ -303,23 +307,26 @@ function focusedByKeyboard(node) {
 
 // Narrow screens get the mark alone in a circle. There is no @media without a stylesheet,
 // so the query is asked of matchMedia and the answer is written back as inline styles.
-function applyCompact(button, text, compact) {
+function applyCompact(button, text, compact, credit = null) {
   const shape = compact
-    ? { padding: '0', width: '3rem', height: '3rem', minHeight: '3rem', borderRadius: '999px', gap: '0' }
+    ? compactTriggerStyle()
     : { padding: '0.6875rem 1.05rem', width: 'auto', height: 'auto', minHeight: '2.75rem', gap: '0.5rem' };
 
   button.__srCompact = shape;
   Object.assign(button.style, shape);
   text.style.display = compact ? 'none' : 'inline';
+  // The credit goes with the label. Under a 48px circle a line reading "Powered by Session
+  // Replay" is three times the width of the thing it is crediting.
+  if (credit) credit.style.display = compact ? 'none' : 'block';
 }
 
-function watchWidth(doc, button, text) {
+function watchWidth(doc, button, text, credit = null) {
   const win = doc.defaultView;
 
   if (!win || typeof win.matchMedia !== 'function') return;
 
   const query = win.matchMedia(BUTTON_COMPACT_QUERY);
-  const update = () => applyCompact(button, text, query.matches);
+  const update = () => applyCompact(button, text, query.matches, credit);
 
   update();
 
@@ -393,12 +400,7 @@ function brandMark(doc, size, tile) {
     { stroke: '#000', strokeWidth: '5', strokeLinecap: 'round', fill: 'none' }
   );
 
-  [
-    'M15 24 V19 A4 4 0 0 1 19 15 H24',
-    'M40 15 H45 A4 4 0 0 1 49 19 V24',
-    'M49 40 V45 A4 4 0 0 1 45 49 H40',
-    'M24 49 H19 A4 4 0 0 1 15 45 V40'
-  ].forEach((d) => brackets.appendChild(svgNode(doc, 'path', { d })));
+  MARK_BRACKETS.forEach((d) => brackets.appendChild(svgNode(doc, 'path', { d })));
 
   mask.append(
     svgNode(doc, 'rect', { width: '64', height: '64' }, { fill: '#000' }),
@@ -407,7 +409,7 @@ function brandMark(doc, size, tile) {
     svgNode(
       doc,
       'path',
-      { d: 'M28 26 L40 32 L28 38 Z' },
+      { d: MARK_TRIANGLE },
       { fill: '#000', stroke: '#000', strokeWidth: '4', strokeLinejoin: 'round' }
     )
   );
@@ -508,7 +510,12 @@ export function renderPlaceholders({ doc = document, label = BUTTON_LABEL } = {}
         // An empty attribute means "wherever I put this". A corner name means the site
         // wants it floating, and put the element anywhere convenient to say so.
         inline: !BUTTON_POSITIONS[asked],
-        position: BUTTON_POSITIONS[asked] ? asked : 'bottom-right'
+        position: BUTTON_POSITIONS[asked] ? asked : 'bottom-right',
+        // The one-element install is the path for a site that would rather not write
+        // JavaScript, so opting out of the credit has to be sayable in markup too -
+        // otherwise the only way to do it is the mountButton() call this path exists to
+        // avoid.
+        attribution: slot.getAttribute('data-attribution') !== 'false'
       })
     );
 

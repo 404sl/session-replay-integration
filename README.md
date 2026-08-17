@@ -14,7 +14,7 @@ it, and explains where to get it when they do not.
 ### A script tag
 
 ```html
-<script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
 
 <button data-sr-trigger>Report a bug</button>
 ```
@@ -47,11 +47,40 @@ states - and you make no styling decisions at all:
 
 ```html
 <head>
-  <script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
+  <script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
 </head>
 ...
 <div data-session-replay-button></div>
 ```
+
+## Or write the markup yourself
+
+If you would rather the button were in your own HTML than added to it by a script - so it is
+in your source, in your server's response, and there before any JavaScript runs - load the
+stylesheet and write the four lines:
+
+```html
+<head>
+  <link rel="stylesheet" href="https://session-replay.com/integration/session-replay-0.2.0.css">
+  <script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
+</head>
+...
+<div class="sr-report">
+  <button type="button" data-sr-trigger class="sr-report-trigger">
+    <span class="sr-report-label">Report a bug</span>
+  </button>
+  <small class="sr-report-by">Powered by
+    <a class="sr-report-link" href="https://session-replay.com/?utm_source=integration&utm_medium=button"
+       target="_blank" rel="noopener">Session Replay</a></small>
+</div>
+```
+
+The script still has to load - it is what talks to the extension - but it only wires the
+click. Both paths produce the same button; the stylesheet is generated from the same file the
+inline styles come from, so they cannot drift apart.
+
+The stylesheet covers the button where you put it. The floating one stays a JavaScript call,
+because pinning something to the corner of a page is a decision rather than a default.
 
 **In the head, with `defer`.** In the head so it is fetched while the page is still
 parsing rather than after it; `defer` so it does not block that parsing and runs once the
@@ -73,7 +102,7 @@ Give the attribute a corner name and it floats there instead:
 Style your own trigger, or take a floating one:
 
 ```html
-<script src="https://session-replay.com/integration/session-replay-0.1.0.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
 <script>
   addEventListener('load', () => SessionReplay.mountButton());
 </script>
@@ -91,6 +120,32 @@ screens.
 
 Nothing mounts it for you. A script tag that put a floating button on somebody's page
 uninvited would be an advert rather than an integration.
+
+## The "Powered by" line
+
+The branded button credits us underneath itself, with a link to the site. That is how people
+find out this exists, and it is the deal for the button being free to use.
+
+It is a sibling of the button, never inside it: an `<a>` inside a `<button>` is interactive
+content nested in interactive content, which the HTML spec forbids and browsers handle
+inconsistently - usually by making the link unreachable from the keyboard.
+
+Turn it off with `attribution: false`:
+
+```js
+mountButton({ attribution: false });
+```
+
+Removing it is a **Professional** plan feature. This library cannot check that: it is open
+source, it runs on your visitor's machine, and it makes no network request - so the option is
+here for everyone and the plan is between us and you. Sites on Starter that keep the credit
+are the reason the button exists at all.
+
+Styling your own trigger removes it too, since then none of this markup is ours:
+
+```html
+<button data-sr-trigger>Something went wrong?</button>
+```
 
 ## What happens when it is pressed
 
@@ -119,10 +174,19 @@ import { report, isAvailable, init } from '@404sl/session-replay-integration';
 await isAvailable();  // is the extension on this page?
 await report();       // 'opened' | 'blocked' | 'missing' | 'unsupported'
 init();               // listen, and fill placeholders; safe to call again
+```
+
+```js
+import { renderPlaceholders, mountButton, createButton } from '@404sl/session-replay-integration/button';
+
 renderPlaceholders(); // fill placeholders rendered since, on their own
 mountButton();        // our floating button, if you want one
 createButton();       // the element on its own, to place yourself
 ```
+
+The three that build a button live behind `/button`, so importing `init` does not pull the
+button code into your bundle when you have styled your own trigger. In the script-tag build
+they are all on `window.SessionReplay`, where there is only one file to load anyway.
 
 `report()` is there for sites that would rather trigger from their own code — a menu item,
 a keyboard shortcut, an error boundary — than from an element attribute.

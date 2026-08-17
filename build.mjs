@@ -6,6 +6,8 @@
 // script-tag path, where a site wants one URL and no build step of its own.
 
 import { readFile, writeFile, mkdir } from 'node:fs/promises';
+
+import { stylesheet } from './src/stylesheet.js';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 
@@ -13,6 +15,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 
 // Dependency order, because concatenation has no module graph to work it out from.
 const SOURCES = [
+  'src/styles.js',
   'src/copy.js',
   'src/detect.js',
   'src/splash.js',
@@ -81,7 +84,14 @@ ${parts.join('\n\n')}
 }());
 `;
 
+// src/stylesheet.js is deliberately not in SOURCES: it serialises the styles that the
+// browser code applies directly, so shipping it to a visitor would be bytes nothing reads.
+const { version } = JSON.parse(await readFile(join(here, 'package.json'), 'utf8'));
+const css = stylesheet({ version });
+
 await mkdir(join(here, 'dist'), { recursive: true });
 await writeFile(join(here, 'dist/session-replay.js'), bundle);
+await writeFile(join(here, 'dist/session-replay.css'), css);
 
-console.log(`dist/session-replay.js — ${(bundle.length / 1024).toFixed(1)} KB`);
+console.log(`dist/session-replay.js  — ${(bundle.length / 1024).toFixed(1)} KB`);
+console.log(`dist/session-replay.css — ${(css.length / 1024).toFixed(1)} KB`);
