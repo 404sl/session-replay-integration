@@ -17,6 +17,7 @@
 // would be a poor joke.
 
 import { detectExtension, isSupportedBrowser, OPEN_EVENT, OPENED_EVENT } from './detect.js';
+import { identify } from './identify.js';
 import { showSplash } from './splash.js';
 import { renderPlaceholders } from './button.js';
 
@@ -197,4 +198,4 @@ function blockedMessage() {
   };
 }
 
-export { showSplash, isSupportedBrowser, detectExtension };
+export { showSplash, isSupportedBrowser, detectExtension, identify };

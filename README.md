@@ -169,11 +169,12 @@ chosen to load this library.
 ## API
 
 ```js
-import { report, isAvailable, init } from '@404sl/session-replay-integration';
+import { report, isAvailable, init, identify } from '@404sl/session-replay-integration';
 
 await isAvailable();  // is the extension on this page?
 await report();       // 'opened' | 'blocked' | 'missing' | 'unsupported'
 init();               // listen, and fill placeholders; safe to call again
+identify({ email });  // who this is, for whenever a report is made
 ```
 
 ```js
@@ -197,6 +198,52 @@ Chrome only lets an extension open its own side panel in response to a user gest
 whether a click that began in the page still counts has changed between Chrome versions.
 When the panel refuses to open, `report()` returns `'blocked'` and the overlay tells the
 visitor to open it from the toolbar instead. It is a real outcome, not a defensive branch.
+
+## Who hit the bug
+
+A report is worth a great deal more when it says which account made it and which release
+they were on. Your page knows both; tell us with `identify()`:
+
+```js
+import { identify } from '@404sl/session-replay-integration';
+
+identify({
+  email: 'ada@example.com',
+  plan: 'professional',
+  orderId: 'SR-1201',
+  release: '2026.08.18',
+  requestId: 'b1f4c0'
+});
+```
+
+```html
+<script>
+  SessionReplay.identify({ email: 'ada@example.com', release: '2026.08.18' });
+</script>
+```
+
+Those five keys, and no others:
+
+| Key | What it is for |
+| --- | --- |
+| `email` | who is signed in, so a reply can go to them |
+| `plan` | what they are paying for, known before the reply is written |
+| `orderId` | the record the bug is about |
+| `release` | the build the page came from |
+| `requestId` | the server request that rendered it, to join to your own logs |
+
+Pass any subset. Repeat calls **merge**, so a single-page app can add to it as it learns
+more — sign-in, then a route change — rather than repeating everything each time. A key
+given as `null` is dropped, which is what a sign-out wants. Anything outside the five is
+ignored, and so is any value that is not a plain scalar: there is no free-form blob here,
+because nothing could validate one or show it sensibly on a report.
+
+**We never go looking for any of it.** The library reads nothing out of your DOM — no
+scraping a header for an email, no guessing a plan from a badge. It holds what you pushed
+and hands it over only when the extension asks for it, over the same `CustomEvent` question
+and answer that detection uses. A page that never calls `identify()` says nothing at all,
+and calling it never starts a recording: capturing stays something your visitor does, on
+purpose, by pressing the button.
 
 ## Content Security Policy
 
