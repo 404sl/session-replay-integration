@@ -18,6 +18,7 @@ const SOURCES = [
   'src/styles.js',
   'src/copy.js',
   'src/detect.js',
+  'src/identify.js',
   'src/splash.js',
   'src/button.js',
   'src/index.js'
@@ -75,6 +76,7 @@ ${parts.join('\n\n')}
     report,
     init,
     isAvailable,
+    identify,
     createButton,
     mountButton,
     // For a page that renders a placeholder after load and would rather say so than call
