@@ -1,17 +1,25 @@
 name: Release
 
 # Driven by the tag rather than by a merge. A version is a deliberate act: pushing v0.2.0
-# is somebody saying "this is 0.2.0", and nothing is published without that.
+# is somebody saying "this is 0.2.0", and nothing is released without that.
+#
+# This does not publish. Publishing is done by hand, because the npm account is protected
+# by two-factor authentication and a one-time code cannot be given to a workflow. An
+# automation token would bypass that, and the account is worth more than the convenience.
+#
+# So the order is: publish from a laptop, then push the tag. What runs here is everything
+# that can be checked after the fact - that the tag names the version that was published,
+# that dist was built from src, and that the tests pass at that commit - and then the
+# GitHub release, which is the part that was being forgotten.
 on:
   push:
     tags: ['v*']
 
 permissions:
   contents: write # to create the GitHub release
-  id-token: write # npm provenance, so the package can be traced to this workflow
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,12 +27,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-          registry-url: 'https://registry.npmjs.org'
 
       - run: npm test
 
-      # A tag that disagrees with package.json means one of the two is wrong, and guessing
-      # which would publish a version nobody asked for.
+      # A tag that disagrees with package.json means one of the two is wrong, and a release
+      # named after a version nobody published is worse than no release.
       - name: The tag and package.json agree
         run: |
           tagged="${GITHUB_REF_NAME#v}"
@@ -39,9 +46,24 @@ jobs:
           npm run build
           git diff --exit-code dist/
 
-      - run: npm publish --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      # What was tagged is what the registry is serving. This is the check the manual
+      # publish loses: a tag pushed from a tree that was not the one published would
+      # otherwise be indistinguishable from a correct one.
+      - name: The registry is serving this build
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          if ! npm view "@404sl/session-replay-integration@$version" version > /dev/null 2>&1; then
+            echo "::error::$version is not on the registry - publish before pushing the tag"
+            exit 1
+          fi
+          npm pack "@404sl/session-replay-integration@$version" --silent > /dev/null
+          tar xzf "404sl-session-replay-integration-$version.tgz"
+          for file in dist/session-replay.js dist/session-replay.css; do
+            if ! cmp -s "package/$file" "$file"; then
+              echo "::error::published $file is not what this tag points at"
+              exit 1
+            fi
+          done
 
       - name: GitHub release
         run: gh release create "$GITHUB_REF_NAME" --generate-notes
