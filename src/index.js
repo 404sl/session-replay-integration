@@ -16,7 +16,7 @@
 // page it is already running in, and a "report a bug" button that reported on its visitors
 // would be a poor joke.
 
-import { detectExtension, isSupportedBrowser, OPEN_EVENT, OPENED_EVENT } from './detect.js';
+import { detectExtension, isAppWindow, isSupportedBrowser, OPEN_EVENT, OPENED_EVENT } from './detect.js';
 import { identify } from './identify.js';
 import { showSplash } from './splash.js';
 import { renderPlaceholders } from './button.js';
@@ -96,7 +96,11 @@ function blocked(win, doc, reason) {
   // to know which rule was hit, and the console is where they look.
   if (reason && win.console) win.console.warn(`[session-replay] panel did not open: ${reason}`);
 
-  showSplash({ doc, supported: true, ...blockedMessage() });
+  // An installed PWA, or anything else drawn without browser chrome, has no extension
+  // toolbar - so telling somebody there to use one is telling them to do something
+  // impossible. The window is asked directly rather than Chrome's reason string being
+  // read, because that wording is Chrome's and has changed between versions.
+  showSplash({ doc, supported: true, variant: isAppWindow({ win }) ? 'no-toolbar' : 'blocked' });
 
   return 'blocked';
 }
@@ -190,12 +194,4 @@ export function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {})
   });
 }
 
-function blockedMessage() {
-  return {
-    message:
-      'Session Replay is installed. Open it from the toolbar - Chrome only lets an ' +
-      'extension open its own panel from its own button.'
-  };
-}
-
-export { showSplash, isSupportedBrowser, detectExtension, identify };
+export { showSplash, isSupportedBrowser, isAppWindow, detectExtension, identify };

@@ -286,6 +286,15 @@ const ENGLISH = {
     'Session Replay is installed. Open it from the toolbar - Chrome only lets an extension ' +
     'open its own panel from its own button.',
 
+  noToolbarTitle: 'Open this page in the browser',
+  noToolbar:
+    'Session Replay is installed, but this window has no toolbar to open it from. Chrome ' +
+    'only lets an extension open its panel from its own button, and an app window has no ' +
+    'extension buttons.',
+  noToolbarNext:
+    'Open this page in Chrome from the app menu, or copy the link below and paste it into ' +
+    'a browser tab, then report the bug from there.',
+
   close: 'Close',
   gotIt: 'Got it'
 };
@@ -321,6 +330,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'Session Replay установлен. Откройте его с панели инструментов — Chrome разрешает ' +
       'расширению открывать свою панель только по нажатию своей же кнопки.',
+    noToolbarTitle: 'Откройте эту страницу в браузере',
+    noToolbar:
+      'Session Replay установлен, но в этом окне нет панели инструментов, с которой его ' +
+      'можно открыть. Chrome разрешает расширению открывать свою панель только по нажатию ' +
+      'своей же кнопки, а в окне приложения кнопок расширений нет.',
+    noToolbarNext:
+      'Откройте эту страницу в Chrome через меню приложения или скопируйте ссылку ниже, ' +
+      'вставьте её во вкладку браузера и сообщите об ошибке оттуда.',
     close: 'Закрыть',
     gotIt: 'Понятно'
   },
@@ -353,6 +370,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'Session Replay ist installiert. Öffnen Sie sie über die Symbolleiste - Chrome lässt ' +
       'eine Erweiterung ihr Panel nur über ihren eigenen Knopf öffnen.',
+    noToolbarTitle: 'Öffnen Sie diese Seite im Browser',
+    noToolbar:
+      'Session Replay ist installiert, aber dieses Fenster hat keine Symbolleiste, über die ' +
+      'sie sich öffnen ließe. Chrome lässt eine Erweiterung ihr Panel nur über ihren eigenen ' +
+      'Knopf öffnen, und ein App-Fenster hat keine Erweiterungsknöpfe.',
+    noToolbarNext:
+      'Öffnen Sie diese Seite über das App-Menü in Chrome, oder kopieren Sie den Link unten, ' +
+      'fügen Sie ihn in einen Browser-Tab ein und melden Sie den Fehler von dort.',
     close: 'Schließen',
     gotIt: 'Verstanden'
   },
@@ -385,6 +410,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'Session Replay está instalada. Ábrela desde la barra de herramientas: Chrome solo ' +
       'permite que una extensión abra su panel desde su propio botón.',
+    noToolbarTitle: 'Abre esta página en el navegador',
+    noToolbar:
+      'Session Replay está instalada, pero esta ventana no tiene barra de herramientas desde ' +
+      'la que abrirla. Chrome solo permite que una extensión abra su panel desde su propio ' +
+      'botón, y una ventana de aplicación no tiene botones de extensiones.',
+    noToolbarNext:
+      'Abre esta página en Chrome desde el menú de la aplicación, o copia el enlace de abajo ' +
+      'y pégalo en una pestaña del navegador para informar del error desde allí.',
     close: 'Cerrar',
     gotIt: 'Entendido'
   },
@@ -417,6 +450,14 @@ const TRANSLATIONS = {
     panelBlocked:
       "Session Replay est installée. Ouvrez-la depuis la barre d'outils : Chrome ne laisse " +
       'une extension ouvrir son panneau que depuis son propre bouton.',
+    noToolbarTitle: 'Ouvrez cette page dans le navigateur',
+    noToolbar:
+      "Session Replay est installée, mais cette fenêtre n'a pas de barre d'outils pour " +
+      "l'ouvrir. Chrome ne laisse une extension ouvrir son panneau que depuis son propre " +
+      "bouton, et une fenêtre d'application n'a aucun bouton d'extension.",
+    noToolbarNext:
+      "Ouvrez cette page dans Chrome depuis le menu de l'application, ou copiez le lien " +
+      'ci-dessous et collez-le dans un onglet du navigateur, puis signalez le bug depuis là.',
     close: 'Fermer',
     gotIt: 'Compris'
   },
@@ -449,6 +490,14 @@ const TRANSLATIONS = {
     panelBlocked:
       "Session Replay è installata. Aprila dalla barra degli strumenti: Chrome lascia che " +
       "un'estensione apra il proprio pannello solo dal proprio pulsante.",
+    noToolbarTitle: 'Apri questa pagina nel browser',
+    noToolbar:
+      "Session Replay è installata, ma questa finestra non ha una barra degli strumenti da " +
+      "cui aprirla. Chrome lascia che un'estensione apra il proprio pannello solo dal proprio " +
+      'pulsante, e una finestra applicazione non ha pulsanti delle estensioni.',
+    noToolbarNext:
+      "Apri questa pagina in Chrome dal menu dell'applicazione, oppure copia il link qui " +
+      'sotto e incollalo in una scheda del browser, poi segnala il bug da lì.',
     close: 'Chiudi',
     gotIt: 'Ho capito'
   },
@@ -481,6 +530,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'O Session Replay está instalado. Abra-o a partir da barra de ferramentas: o Chrome ' +
       'só deixa uma extensão abrir o seu painel a partir do seu próprio botão.',
+    noToolbarTitle: 'Abra esta página no navegador',
+    noToolbar:
+      'O Session Replay está instalado, mas esta janela não tem barra de ferramentas por onde ' +
+      'o abrir. O Chrome só deixa uma extensão abrir o seu painel a partir do seu próprio ' +
+      'botão, e uma janela de aplicação não tem botões de extensões.',
+    noToolbarNext:
+      'Abra esta página no Chrome a partir do menu da aplicação, ou copie a ligação abaixo e ' +
+      'cole-a num separador do navegador, e comunique o erro a partir de lá.',
     close: 'Fechar',
     gotIt: 'Percebi'
   }
@@ -593,6 +650,34 @@ function isSupportedBrowser({ nav = navigator } = {}) {
   if (/edg\/|opr\/|chrome\//i.test(ua)) return true;
 
   return false;
+}
+
+// A window drawn without browser chrome: an installed PWA, a shortcut opened as an app,
+// anything running full screen. Every one of them is missing the extension toolbar, so
+// "open it from the toolbar" is advice nobody there can follow.
+//
+// minimal-ui belongs in the list even though it keeps a back button and an address bar:
+// what it does not keep is the extensions button.
+const APP_WINDOW_QUERY =
+  '(display-mode: standalone), (display-mode: minimal-ui), (display-mode: fullscreen), ' +
+  '(display-mode: window-controls-overlay)';
+
+/**
+ * Is this window one without an extension toolbar?
+ *
+ * Asked of the window rather than read out of the reason the extension gives for refusing:
+ * that string is Chrome's, and its wording has changed between versions.
+ *
+ * @param {Object} [options]
+ * @param {Window} [options.win]
+ * @param {Navigator} [options.nav]
+ * @returns {boolean} false wherever the question cannot be asked
+ */
+function isAppWindow({ win = window, nav = win?.navigator } = {}) {
+  if (win?.matchMedia?.(APP_WINDOW_QUERY)?.matches) return true;
+
+  // iOS home-screen apps, which predate display-mode and still answer only to this.
+  return nav?.standalone === true;
 }
 
 // What the site tells us about whoever is looking at the page - and nothing it did not.
@@ -826,15 +911,25 @@ let openSplash = null;
  * @param {Object} options
  * @param {Document} [options.doc]
  * @param {boolean} options.supported whether this browser could run the extension
+ * @param {string} [options.variant] which state to draw: 'install', 'unsupported',
+ *   'blocked' or 'no-toolbar'. Worked out from the rest when it is not given.
  * @param {string} [options.message] replaces the body, for the panel-blocked case
  * @returns {Function} closes it
  */
-function showSplash({ doc = document, supported = true, message = null, lang = null } = {}) {
+function showSplash({
+  doc = document,
+  supported = true,
+  variant = null,
+  message = null,
+  lang = null
+} = {}) {
   if (openSplash) openSplash();
 
   // Resolved per call rather than once at load: the page decides the language, and a page
   // that sets it after this script ran - or changes it - should still be answered in it.
   COPY = copyFor({ doc, lang });
+
+  const state = variantFor({ supported, variant, message });
 
   const win = doc.defaultView || null;
   const returnFocusTo = doc.activeElement;
@@ -926,9 +1021,9 @@ function showSplash({ doc = document, supported = true, message = null, lang = n
   };
 
   card.append(
-    headerBar(doc, { supported, message, titleId, close }),
-    bodySection(doc, { supported, message, bodyId, win }),
-    actionBar(doc, { supported, message, close })
+    headerBar(doc, { state, titleId, close }),
+    bodySection(doc, { state, message, bodyId, win }),
+    actionBar(doc, { state, close })
   );
   overlay.appendChild(card);
 
@@ -962,10 +1057,20 @@ function showSplash({ doc = document, supported = true, message = null, lang = n
 }
 
 
+// Which of the four states is being drawn. A caller may name one outright; otherwise it
+// follows from what we know, and a bare message is the panel-blocked case that option was
+// added for before there was a name for it.
+function variantFor({ supported, variant, message }) {
+  if (variant) return variant;
+  if (message) return 'blocked';
+
+  return supported ? 'install' : 'unsupported';
+}
+
 // The header carries the brand, because this is the one moment the visitor meets the
 // product. Emerald on white is a shape colour, not a text colour, so the band is the darker
 // end of the same hue and everything written on it is white or mint.
-function headerBar(doc, { supported, message, titleId, close }) {
+function headerBar(doc, { state, titleId, close }) {
   const bar = element(doc, 'div', {
     position: 'relative',
     flex: '0 0 auto',
@@ -991,7 +1096,7 @@ function headerBar(doc, { supported, message, titleId, close }) {
     })
   );
 
-  const heading = text(doc, 'h2', headline({ supported, message }), {
+  const heading = text(doc, 'h2', headline(state), {
     margin: '0.6rem 0 0',
     // Large text by the WCAG definition at bold 22px, and white on this band is 7.7:1 -
     // past the threshold for small text, never mind large.
@@ -1007,10 +1112,18 @@ function headerBar(doc, { supported, message, titleId, close }) {
   return bar;
 }
 
-function headline({ supported, message }) {
-  if (message) return COPY.blockedTitle;
+function headline(state) {
+  if (state === 'no-toolbar') return COPY.noToolbarTitle;
+  if (state === 'blocked') return COPY.blockedTitle;
 
-  return supported ? COPY.title : COPY.unsupportedTitle;
+  return state === 'install' ? COPY.title : COPY.unsupportedTitle;
+}
+
+function lead(state) {
+  if (state === 'no-toolbar') return COPY.noToolbar;
+  if (state === 'blocked') return COPY.panelBlocked;
+
+  return state === 'install' ? COPY.supported : COPY.unsupported;
 }
 
 function closeButton(doc, close) {
@@ -1045,7 +1158,7 @@ function closeButton(doc, close) {
   return button;
 }
 
-function bodySection(doc, { supported, message, bodyId, win }) {
+function bodySection(doc, { state, message, bodyId, win }) {
   const section = element(doc, 'div', {
     flex: '1 1 auto',
     padding: '1.25rem',
@@ -1054,16 +1167,16 @@ function bodySection(doc, { supported, message, bodyId, win }) {
     background: COLOR.paper
   });
 
-  const lead = text(doc, 'p', message || (supported ? COPY.supported : COPY.unsupported), {
+  const opening = text(doc, 'p', message || lead(state), {
     color: COLOR.body,
     fontSize: '0.9375rem'
   });
-  lead.id = bodyId;
-  section.appendChild(lead);
+  opening.id = bodyId;
+  section.appendChild(opening);
 
   // A list of what it captures only makes sense to somebody deciding whether to install it.
-  // The other two states are talking to somebody who already has it, or cannot have it.
-  if (supported && !message) {
+  // The other states are talking to somebody who already has it, or cannot have it.
+  if (state === 'install') {
     section.appendChild(captureList(doc));
     section.appendChild(
       text(doc, 'p', COPY.free, {
@@ -1074,11 +1187,12 @@ function bodySection(doc, { supported, message, bodyId, win }) {
     );
   }
 
-  // Not a dead end. The visitor cannot install it here, but they can carry the page to a
-  // browser where they can, and the link is the only part of that we can help with.
-  if (!supported && !message) {
+  // Not a dead end. Neither state can be rescued in this window - one cannot install the
+  // extension, the other has it installed with no button to press - but both can carry the
+  // page to a window that can, and the link is the part of that we can help with.
+  if (state === 'unsupported' || state === 'no-toolbar') {
     section.appendChild(
-      text(doc, 'p', COPY.unsupportedNext, {
+      text(doc, 'p', state === 'no-toolbar' ? COPY.noToolbarNext : COPY.unsupportedNext, {
         margin: '0.75rem 0 0.85rem',
         fontSize: '0.9375rem',
         color: COLOR.body
@@ -1177,7 +1291,7 @@ function copyLinkRow(doc, win) {
   return row;
 }
 
-function actionBar(doc, { supported, message, close }) {
+function actionBar(doc, { state, close }) {
   const bar = element(doc, 'div', {
     flex: '0 0 auto',
     display: 'flex',
@@ -1190,7 +1304,7 @@ function actionBar(doc, { supported, message, close }) {
 
   // No install button in a browser that cannot install it, and none when the extension is
   // already there and merely could not open its own panel.
-  if (supported && !message) {
+  if (state === 'install') {
     bar.appendChild(installLink(doc));
     bar.appendChild(secondaryButton(doc, COPY.dismiss, close));
 
@@ -2237,7 +2351,11 @@ function blocked(win, doc, reason) {
   // to know which rule was hit, and the console is where they look.
   if (reason && win.console) win.console.warn(`[session-replay] panel did not open: ${reason}`);
 
-  showSplash({ doc, supported: true, ...blockedMessage() });
+  // An installed PWA, or anything else drawn without browser chrome, has no extension
+  // toolbar - so telling somebody there to use one is telling them to do something
+  // impossible. The window is asked directly rather than Chrome's reason string being
+  // read, because that wording is Chrome's and has changed between versions.
+  showSplash({ doc, supported: true, variant: isAppWindow({ win }) ? 'no-toolbar' : 'blocked' });
 
   return 'blocked';
 }
@@ -2329,14 +2447,6 @@ function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {}) {
     win.dispatchEvent(new win.CustomEvent(OPEN_EVENT));
     win.setTimeout(() => finish({ opened: false, reason: 'no answer' }), timeoutMs);
   });
-}
-
-function blockedMessage() {
-  return {
-    message:
-      'Session Replay is installed. Open it from the toolbar - Chrome only lets an ' +
-      'extension open its own panel from its own button.'
-  };
 }
 
   // The script tag path wires itself. The npm package does not - importing a module should

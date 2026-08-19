@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { detectExtension, isSupportedBrowser, PING_EVENT, PONG_EVENT } from '../src/detect.js';
+import { detectExtension, isAppWindow, isSupportedBrowser, PING_EVENT, PONG_EVENT } from '../src/detect.js';
 
 // A window with just enough of one to answer questions about events. No jsdom: the parts
 // worth testing are the decisions, and a fake here keeps the package dependency-free -
@@ -82,4 +82,27 @@ test('falls back to the user agent where there are no brands', () => {
   assert.equal(isSupportedBrowser({ nav: ua('Mozilla/5.0 ... Chrome/151.0.0.0 Safari/537.36') }), true);
   assert.equal(isSupportedBrowser({ nav: ua('Mozilla/5.0 ... Version/17.0 Safari/605.1.15') }), false);
   assert.equal(isSupportedBrowser({ nav: ua('Mozilla/5.0 ... Firefox/130.0') }), false);
+});
+
+// An installed PWA, a shortcut opened as an app, a page in full screen: all of them are
+// missing the extension toolbar, which is the one thing the blocked overlay used to point
+// at. Asked of the window, not of the reason string Chrome hands back.
+test('recognises a window drawn without an extension toolbar', () => {
+  const displayMode = (mode) => ({ matchMedia: (query) => ({ matches: query.includes(mode) }) });
+
+  assert.equal(isAppWindow({ win: displayMode('standalone') }), true);
+  assert.equal(isAppWindow({ win: displayMode('minimal-ui') }), true);
+  assert.equal(isAppWindow({ win: displayMode('window-controls-overlay') }), true);
+  assert.equal(isAppWindow({ win: displayMode('browser') }), false);
+});
+
+// iOS home-screen apps predate display-mode and still answer only to this.
+test('takes navigator.standalone as an answer too', () => {
+  assert.equal(isAppWindow({ win: {}, nav: { standalone: true } }), true);
+});
+
+// An engine with no matchMedia must read as an ordinary window rather than throw on the
+// way to an overlay.
+test('says no where the question cannot be asked', () => {
+  assert.equal(isAppWindow({ win: {} }), false);
 });

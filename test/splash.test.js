@@ -162,6 +162,36 @@ test('it shows a caller message on its own, without the pitch', () => {
   assert.ok(!text.includes(COPY.install));
 });
 
+// The panel-blocked state, in a window that has the toolbar it points at.
+test('it points at the toolbar when there is one', () => {
+  const doc = fakeDom();
+
+  showSplash({ doc, supported: true, variant: 'blocked' });
+  const text = textOf(doc);
+
+  assert.ok(text.includes(COPY.blockedTitle));
+  assert.ok(text.includes(COPY.panelBlocked));
+  assert.ok(!text.includes(COPY.install));
+});
+
+// In an app window the toolbar does not exist, so the only way on is to carry the page to
+// a browser tab - the same offer the unsupported state makes, for the same reason.
+test('it offers the link instead of a toolbar that is not there', () => {
+  const doc = fakeDom();
+
+  showSplash({ doc, supported: true, variant: 'no-toolbar' });
+  const text = textOf(doc);
+
+  assert.ok(text.includes(COPY.noToolbarTitle));
+  assert.ok(text.includes(COPY.noToolbar));
+  assert.ok(text.includes(COPY.noToolbarNext));
+  assert.ok(text.includes('https://example.com/checkout'));
+  assert.ok(text.includes(COPY.copy));
+  // It is already installed; there is nothing to add.
+  assert.ok(!text.includes(COPY.install));
+  assert.ok(!text.includes(COPY.blockedTitle));
+});
+
 test('closing it takes the overlay back out of the page', () => {
   const doc = fakeDom();
 
