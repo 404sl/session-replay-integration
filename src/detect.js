@@ -75,3 +75,31 @@ export function isSupportedBrowser({ nav = navigator } = {}) {
 
   return false;
 }
+
+// A window drawn without browser chrome: an installed PWA, a shortcut opened as an app,
+// anything running full screen. Every one of them is missing the extension toolbar, so
+// "open it from the toolbar" is advice nobody there can follow.
+//
+// minimal-ui belongs in the list even though it keeps a back button and an address bar:
+// what it does not keep is the extensions button.
+const APP_WINDOW_QUERY =
+  '(display-mode: standalone), (display-mode: minimal-ui), (display-mode: fullscreen), ' +
+  '(display-mode: window-controls-overlay)';
+
+/**
+ * Is this window one without an extension toolbar?
+ *
+ * Asked of the window rather than read out of the reason the extension gives for refusing:
+ * that string is Chrome's, and its wording has changed between versions.
+ *
+ * @param {Object} [options]
+ * @param {Window} [options.win]
+ * @param {Navigator} [options.nav]
+ * @returns {boolean} false wherever the question cannot be asked
+ */
+export function isAppWindow({ win = window, nav = win?.navigator } = {}) {
+  if (win?.matchMedia?.(APP_WINDOW_QUERY)?.matches) return true;
+
+  // iOS home-screen apps, which predate display-mode and still answer only to this.
+  return nav?.standalone === true;
+}

@@ -196,8 +196,13 @@ a keyboard shortcut, an error boundary — than from an element attribute.
 
 Chrome only lets an extension open its own side panel in response to a user gesture, and
 whether a click that began in the page still counts has changed between Chrome versions.
-When the panel refuses to open, `report()` returns `'blocked'` and the overlay tells the
-visitor to open it from the toolbar instead. It is a real outcome, not a defensive branch.
+When the panel refuses to open, `report()` returns `'blocked'` and the overlay explains what
+to do instead. It is a real outcome, not a defensive branch.
+
+What it says depends on the window. An ordinary browser window is told to open the panel
+from the toolbar. A window drawn without browser chrome — an installed PWA, a shortcut
+opened as an app, anything full screen — has no extension toolbar to be told about, so it is
+offered the page's link to carry into a browser tab instead.
 
 ## Who hit the bug
 

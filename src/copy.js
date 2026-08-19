@@ -45,6 +45,15 @@ const ENGLISH = {
     'Session Replay is installed. Open it from the toolbar - Chrome only lets an extension ' +
     'open its own panel from its own button.',
 
+  noToolbarTitle: 'Open this page in the browser',
+  noToolbar:
+    'Session Replay is installed, but this window has no toolbar to open it from. Chrome ' +
+    'only lets an extension open its panel from its own button, and an app window has no ' +
+    'extension buttons.',
+  noToolbarNext:
+    'Open this page in Chrome from the app menu, or copy the link below and paste it into ' +
+    'a browser tab, then report the bug from there.',
+
   close: 'Close',
   gotIt: 'Got it'
 };
@@ -80,6 +89,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'Session Replay установлен. Откройте его с панели инструментов — Chrome разрешает ' +
       'расширению открывать свою панель только по нажатию своей же кнопки.',
+    noToolbarTitle: 'Откройте эту страницу в браузере',
+    noToolbar:
+      'Session Replay установлен, но в этом окне нет панели инструментов, с которой его ' +
+      'можно открыть. Chrome разрешает расширению открывать свою панель только по нажатию ' +
+      'своей же кнопки, а в окне приложения кнопок расширений нет.',
+    noToolbarNext:
+      'Откройте эту страницу в Chrome через меню приложения или скопируйте ссылку ниже, ' +
+      'вставьте её во вкладку браузера и сообщите об ошибке оттуда.',
     close: 'Закрыть',
     gotIt: 'Понятно'
   },
@@ -112,6 +129,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'Session Replay ist installiert. Öffnen Sie sie über die Symbolleiste - Chrome lässt ' +
       'eine Erweiterung ihr Panel nur über ihren eigenen Knopf öffnen.',
+    noToolbarTitle: 'Öffnen Sie diese Seite im Browser',
+    noToolbar:
+      'Session Replay ist installiert, aber dieses Fenster hat keine Symbolleiste, über die ' +
+      'sie sich öffnen ließe. Chrome lässt eine Erweiterung ihr Panel nur über ihren eigenen ' +
+      'Knopf öffnen, und ein App-Fenster hat keine Erweiterungsknöpfe.',
+    noToolbarNext:
+      'Öffnen Sie diese Seite über das App-Menü in Chrome, oder kopieren Sie den Link unten, ' +
+      'fügen Sie ihn in einen Browser-Tab ein und melden Sie den Fehler von dort.',
     close: 'Schließen',
     gotIt: 'Verstanden'
   },
@@ -144,6 +169,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'Session Replay está instalada. Ábrela desde la barra de herramientas: Chrome solo ' +
       'permite que una extensión abra su panel desde su propio botón.',
+    noToolbarTitle: 'Abre esta página en el navegador',
+    noToolbar:
+      'Session Replay está instalada, pero esta ventana no tiene barra de herramientas desde ' +
+      'la que abrirla. Chrome solo permite que una extensión abra su panel desde su propio ' +
+      'botón, y una ventana de aplicación no tiene botones de extensiones.',
+    noToolbarNext:
+      'Abre esta página en Chrome desde el menú de la aplicación, o copia el enlace de abajo ' +
+      'y pégalo en una pestaña del navegador para informar del error desde allí.',
     close: 'Cerrar',
     gotIt: 'Entendido'
   },
@@ -176,6 +209,14 @@ const TRANSLATIONS = {
     panelBlocked:
       "Session Replay est installée. Ouvrez-la depuis la barre d'outils : Chrome ne laisse " +
       'une extension ouvrir son panneau que depuis son propre bouton.',
+    noToolbarTitle: 'Ouvrez cette page dans le navigateur',
+    noToolbar:
+      "Session Replay est installée, mais cette fenêtre n'a pas de barre d'outils pour " +
+      "l'ouvrir. Chrome ne laisse une extension ouvrir son panneau que depuis son propre " +
+      "bouton, et une fenêtre d'application n'a aucun bouton d'extension.",
+    noToolbarNext:
+      "Ouvrez cette page dans Chrome depuis le menu de l'application, ou copiez le lien " +
+      'ci-dessous et collez-le dans un onglet du navigateur, puis signalez le bug depuis là.',
     close: 'Fermer',
     gotIt: 'Compris'
   },
@@ -208,6 +249,14 @@ const TRANSLATIONS = {
     panelBlocked:
       "Session Replay è installata. Aprila dalla barra degli strumenti: Chrome lascia che " +
       "un'estensione apra il proprio pannello solo dal proprio pulsante.",
+    noToolbarTitle: 'Apri questa pagina nel browser',
+    noToolbar:
+      "Session Replay è installata, ma questa finestra non ha una barra degli strumenti da " +
+      "cui aprirla. Chrome lascia che un'estensione apra il proprio pannello solo dal proprio " +
+      'pulsante, e una finestra applicazione non ha pulsanti delle estensioni.',
+    noToolbarNext:
+      "Apri questa pagina in Chrome dal menu dell'applicazione, oppure copia il link qui " +
+      'sotto e incollalo in una scheda del browser, poi segnala il bug da lì.',
     close: 'Chiudi',
     gotIt: 'Ho capito'
   },
@@ -240,6 +289,14 @@ const TRANSLATIONS = {
     panelBlocked:
       'O Session Replay está instalado. Abra-o a partir da barra de ferramentas: o Chrome ' +
       'só deixa uma extensão abrir o seu painel a partir do seu próprio botão.',
+    noToolbarTitle: 'Abra esta página no navegador',
+    noToolbar:
+      'O Session Replay está instalado, mas esta janela não tem barra de ferramentas por onde ' +
+      'o abrir. O Chrome só deixa uma extensão abrir o seu painel a partir do seu próprio ' +
+      'botão, e uma janela de aplicação não tem botões de extensões.',
+    noToolbarNext:
+      'Abra esta página no Chrome a partir do menu da aplicação, ou copie a ligação abaixo e ' +
+      'cole-a num separador do navegador, e comunique o erro a partir de lá.',
     close: 'Fechar',
     gotIt: 'Percebi'
   }
