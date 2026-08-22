@@ -806,6 +806,11 @@ function answerContextRequests({ win = window } = {}) {
 const STORE_URL =
   'https://chromewebstore.google.com/detail/cpcncaaklnlebendcdejmhaoojoobfnl';
 
+// Somewhere to read more that is not the Web Store, which is no use to a reader whose browser
+// cannot install from it. Its own medium, so referrals from the overlay stay countable apart
+// from the ones the attribution link under the button sends.
+const SITE_URL = 'https://session-replay.com/?utm_source=integration&utm_medium=splash';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // The host page's font stack, deliberately: this is their page and the overlay should not
@@ -1079,11 +1084,7 @@ function headerBar(doc, { state, titleId, close }) {
     color: COLOR.paper
   });
 
-  const brand = element(doc, 'div', {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem'
-  });
+  const brand = brandMark(doc, state);
 
   brand.append(
     logoMark(doc, { size: 26, tile: COLOR.mint }),
@@ -1110,6 +1111,50 @@ function headerBar(doc, { state, titleId, close }) {
   bar.append(brand, heading, closeButton(doc, close));
 
   return bar;
+}
+
+// The wordmark is where a reader already looks to find out whose dialog this is, so in the
+// one state that cannot offer an install it carries the way to find out - and it costs no
+// string to translate. Elsewhere it stays a plain label: the other states either have their
+// own call to action or are talking to somebody who already has the extension, and a link
+// there would only be one more focus stop on the way to the button they want.
+function brandMark(doc, state) {
+  const row = {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem'
+  };
+
+  if (state !== 'unsupported') return element(doc, 'div', row);
+
+  const base = {
+    ...row,
+    // The link is the mark and the label, not the band they sit in: a flex box stretches to
+    // its row, and a header-wide target is not what somebody is aiming at.
+    width: 'fit-content',
+    color: COLOR.mintText,
+    textDecoration: 'none',
+    borderRadius: '0.5rem',
+    // Room for the focus ring, taken back again, so the mark and the label do not move.
+    padding: '0.25rem',
+    margin: '-0.25rem',
+    cursor: 'pointer',
+    transition: 'box-shadow 140ms ease'
+  };
+
+  const link = element(doc, 'a', base);
+  link.href = SITE_URL;
+  link.target = '_blank';
+  link.rel = 'noopener noreferrer';
+
+  respond(link, {
+    base,
+    // RESET turns underlines off, so hover has to turn one back on.
+    hover: { textDecoration: 'underline' },
+    focus: { boxShadow: `0 0 0 3px ${COLOR.mint}` }
+  });
+
+  return link;
 }
 
 function headline(state) {
@@ -1174,18 +1219,11 @@ function bodySection(doc, { state, message, bodyId, win }) {
   opening.id = bodyId;
   section.appendChild(opening);
 
-  // A list of what it captures only makes sense to somebody deciding whether to install it.
-  // The other states are talking to somebody who already has it, or cannot have it.
-  if (state === 'install') {
-    section.appendChild(captureList(doc));
-    section.appendChild(
-      text(doc, 'p', COPY.free, {
-        margin: '1rem 0 0',
-        fontSize: '0.8125rem',
-        color: COLOR.muted
-      })
-    );
-  }
+  // What it captures, and what it costs, for anybody still deciding whether to get it. That
+  // is the reader who can install in one click, and equally the reader being told to go and
+  // find another browser - who is being asked for more and, until now, told less. It stays
+  // off the other two states, whose reader already has the extension.
+  if (state === 'install') appendPitch(doc, section);
 
   // Not a dead end. Neither state can be rescued in this window - one cannot install the
   // extension, the other has it installed with no button to press - but both can carry the
@@ -1201,7 +1239,22 @@ function bodySection(doc, { state, message, bodyId, win }) {
     section.appendChild(copyLinkRow(doc, win));
   }
 
+  // Below the copy row, not above it: that row is the one thing here that solves the
+  // immediate problem, and the argument for the product can wait until after it.
+  if (state === 'unsupported') appendPitch(doc, section);
+
   return section;
+}
+
+function appendPitch(doc, section) {
+  section.appendChild(captureList(doc));
+  section.appendChild(
+    text(doc, 'p', COPY.free, {
+      margin: '1rem 0 0',
+      fontSize: '0.8125rem',
+      color: COLOR.muted
+    })
+  );
 }
 
 function captureList(doc) {

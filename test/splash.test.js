@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { showSplash } from '../src/splash.js';
+import { showSplash, STORE_URL, SITE_URL } from '../src/splash.js';
 import { copyFor, pageLanguage } from '../src/copy.js';
 
 // The overlay resolves its words from the page; the tests read the same source.
@@ -118,6 +118,10 @@ function fakeDom() {
 const textOf = (doc) => doc.created.map((node) => node.textContent || '').join(' ');
 const attrValues = (doc, key) =>
   doc.created.map((node) => node.attributes?.[key]).filter(Boolean);
+// The builders assign href as a property rather than an attribute, which is why this does
+// not go through attrValues - an assertion there would pass on an empty list and prove
+// nothing.
+const hrefs = (doc) => doc.created.map((node) => node.href).filter(Boolean);
 
 test('the overlay builds, and is a modal dialog', () => {
   const doc = fakeDom();
@@ -150,6 +154,46 @@ test('it offers no install where one is impossible', () => {
 
   assert.ok(text.includes(COPY.unsupportedTitle));
   assert.ok(!text.includes(COPY.install));
+});
+
+// Being told to go and find another browser is a bigger ask than pressing "add to Chrome",
+// so this reader needs the argument at least as much as the one who can install it.
+test('it still makes the case where it cannot be installed', () => {
+  const doc = fakeDom();
+
+  showSplash({ doc, supported: false });
+  const text = textOf(doc);
+
+  COPY.captures.forEach((line) => assert.ok(text.includes(line), `missing: ${line}`));
+  assert.ok(text.includes(COPY.free));
+  // The offer that solves their immediate problem keeps its place.
+  assert.ok(text.includes(COPY.unsupportedNext));
+  assert.ok(text.includes(COPY.copy));
+});
+
+// The Web Store cannot help a browser that cannot install from it; the site can.
+test('it points at the site, not the store, where the store is useless', () => {
+  const doc = fakeDom();
+
+  showSplash({ doc, supported: false });
+
+  assert.ok(hrefs(doc).includes(SITE_URL));
+  assert.ok(!hrefs(doc).includes(STORE_URL));
+});
+
+// Both of these readers already have the extension. Telling them it is free and needs no
+// account is telling them what they know.
+['blocked', 'no-toolbar'].forEach((variant) => {
+  test(`it makes no pitch in the ${variant} state`, () => {
+    const doc = fakeDom();
+
+    showSplash({ doc, supported: true, variant });
+    const text = textOf(doc);
+
+    assert.ok(!text.includes(COPY.free));
+    COPY.captures.forEach((line) => assert.ok(!text.includes(line), `unexpected: ${line}`));
+    assert.ok(!hrefs(doc).includes(SITE_URL));
+  });
 });
 
 test('it shows a caller message on its own, without the pitch', () => {
