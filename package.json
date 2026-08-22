@@ -1,6 +1,6 @@
 {
   "name": "@404sl/session-replay-integration",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "A \"report a bug\" button for your own site, wired to the Session Replay extension.",
   "type": "module",
   "main": "src/index.js",
