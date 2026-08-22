@@ -20,6 +20,16 @@ import { copyFor, ENGLISH } from './copy.js';
 const STORE_URL =
   'https://chromewebstore.google.com/detail/cpcncaaklnlebendcdejmhaoojoobfnl';
 
+// Where the brand mark in the header points. Its own utm_medium, so a click from this
+// overlay can be told apart from one on the button's "Powered by" line - they are different
+// moments and only one of them is somebody who could not do what they came to do.
+//
+// Deliberately not styles.js's ATTRIBUTION_URL. That string is duplicated in the site's
+// IntegrationScript::ATTRIBUTION_URL because the snippets there are pasted by hand, so
+// changing it means changing two repositories in step. This one is ours alone.
+const SITE_URL =
+  'https://session-replay.com/?utm_source=integration&utm_medium=overlay';
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
 // The host page's font stack, deliberately: this is their page and the overlay should not
@@ -294,11 +304,22 @@ function headerBar(doc, { state, titleId, close }) {
     color: COLOR.paper
   });
 
-  const brand = element(doc, 'div', {
+  // An anchor rather than a div: for a reader who has never heard of us - which on this
+  // overlay is most of them - the brand is the only thing on screen that could say who is
+  // asking, and it was not answering. No new string and nothing to translate, because the
+  // words were already there.
+  const brand = element(doc, 'a', {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem'
+    gap: '0.5rem',
+    textDecoration: 'none',
+    // The host page's own a:hover can reach in here, so both states are stated.
+    color: COLOR.mintText
   });
+
+  brand.href = SITE_URL;
+  brand.target = '_blank';
+  brand.rel = 'noopener';
 
   brand.append(
     logoMark(doc, { size: 26, tile: COLOR.mint }),
@@ -389,22 +410,12 @@ function bodySection(doc, { state, message, bodyId, win }) {
   opening.id = bodyId;
   section.appendChild(opening);
 
-  // A list of what it captures only makes sense to somebody deciding whether to install it.
-  // The other states are talking to somebody who already has it, or cannot have it.
-  if (state === 'install') {
-    section.appendChild(captureList(doc));
-    section.appendChild(
-      text(doc, 'p', COPY.free, {
-        margin: '1rem 0 0',
-        fontSize: '0.8125rem',
-        color: COLOR.muted
-      })
-    );
-  }
-
   // Not a dead end. Neither state can be rescued in this window - one cannot install the
   // extension, the other has it installed with no button to press - but both can carry the
   // page to a window that can, and the link is the part of that we can help with.
+  //
+  // First, and before anything below it: this is the one thing on the overlay that solves
+  // the problem the reader actually has.
   if (state === 'unsupported' || state === 'no-toolbar') {
     section.appendChild(
       text(doc, 'p', state === 'no-toolbar' ? COPY.noToolbarNext : COPY.unsupportedNext, {
@@ -414,6 +425,24 @@ function bodySection(doc, { state, message, bodyId, win }) {
       })
     );
     section.appendChild(copyLinkRow(doc, win));
+  }
+
+  // What it captures, and that it costs nothing. Shown to whoever is deciding whether this
+  // is worth their trouble - which is the person who can install it, and equally the person
+  // being asked to go and find another browser first. That second one is being asked for
+  // MORE than a click and was, until now, given less to go on than the first.
+  //
+  // Not to 'blocked' or 'no-toolbar'. Those readers already have the extension installed;
+  // telling them it is free and needs no account tells them what they know.
+  if (state === 'install' || state === 'unsupported') {
+    section.appendChild(captureList(doc));
+    section.appendChild(
+      text(doc, 'p', COPY.free, {
+        margin: '1rem 0 0',
+        fontSize: '0.8125rem',
+        color: COLOR.muted
+      })
+    );
   }
 
   return section;
