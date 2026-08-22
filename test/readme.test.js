@@ -25,3 +25,22 @@ test('every script-tag example waits for the loader before calling the global', 
     assert.ok(listener < call, `calls the global outside the wait:\n${block}`);
   });
 });
+
+// The install snippets pin a version in the filename, and those URLs are frozen: the file
+// 0.2.0 serves is the file it served the day it was published. So a README that documents a
+// call the pinned bundle does not contain is broken in exactly the way a missing wait is -
+// paste it, and it throws. This is how `identify()` came to be documented under a pin that
+// predates it.
+test('the pinned install URLs name the version this package ships', async () => {
+  const { version } = JSON.parse(
+    await readFile(new URL('../package.json', import.meta.url), 'utf8')
+  );
+
+  const pins = [...readme.matchAll(/session-replay-(\d+\.\d+\.\d+)\.(?:js|css)/g)];
+
+  assert.ok(pins.length > 0, 'no example pins a version any more');
+
+  pins.forEach(([url, pinned]) => {
+    assert.equal(pinned, version, `${url} is behind package.json (${version})`);
+  });
+});
