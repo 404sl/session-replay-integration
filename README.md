@@ -223,9 +223,15 @@ identify({
 
 ```html
 <script>
-  SessionReplay.identify({ email: 'ada@example.com', release: '2026.08.18' });
+  window.addEventListener('DOMContentLoaded', () => {
+    SessionReplay.identify({ email: 'ada@example.com', release: '2026.08.18' });
+  });
 </script>
 ```
+
+The wait is not decoration. The loader is installed with `defer`, so it does not run until the
+document has been parsed, and a call written straight into the markup beside it would reach for
+`window.SessionReplay` while it is still undefined.
 
 Those five keys, and no others:
 
