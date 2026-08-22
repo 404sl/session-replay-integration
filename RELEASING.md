@@ -9,7 +9,8 @@ that, and the account is worth more than the saved minute. So the tag follows th
 rather than causing it.
 
 ```sh
-# 1. decide the version and write it down
+# 1. decide the version, point the README's pinned URLs at it, and commit that -
+#    npm version wants a clean tree
 npm version minor          # or patch / major - commits and tags in one step
 
 # 2. make sure the file sites load matches the source
@@ -21,6 +22,11 @@ npm publish --access public
 # 4. push the commit and the tag
 git push origin master --follow-tags
 ```
+
+The README's install snippets pin the version in the filename, so they document whatever
+version they name rather than the one being released. The suite fails while a pin and
+`package.json` disagree, which is what stops a new function being documented under a pin
+published before it existed.
 
 `--access public` because the package is scoped, and scoped packages are private by default
 - which would fail rather than publish something unintended.

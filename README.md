@@ -14,7 +14,7 @@ it, and explains where to get it when they do not.
 ### A script tag
 
 ```html
-<script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
 
 <button data-sr-trigger>Report a bug</button>
 ```
@@ -47,7 +47,7 @@ states - and you make no styling decisions at all:
 
 ```html
 <head>
-  <script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
+  <script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
 </head>
 ...
 <div data-session-replay-button></div>
@@ -61,8 +61,8 @@ stylesheet and write the four lines:
 
 ```html
 <head>
-  <link rel="stylesheet" href="https://session-replay.com/integration/session-replay-0.2.0.css">
-  <script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
+  <link rel="stylesheet" href="https://session-replay.com/integration/session-replay-0.3.1.css">
+  <script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
 </head>
 ...
 <div class="sr-report">
@@ -102,7 +102,7 @@ Give the attribute a corner name and it floats there instead:
 Style your own trigger, or take a floating one:
 
 ```html
-<script src="https://session-replay.com/integration/session-replay-0.2.0.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
 <script>
   addEventListener('load', () => SessionReplay.mountButton());
 </script>
@@ -223,9 +223,15 @@ identify({
 
 ```html
 <script>
-  SessionReplay.identify({ email: 'ada@example.com', release: '2026.08.18' });
+  window.addEventListener('DOMContentLoaded', () => {
+    SessionReplay.identify({ email: 'ada@example.com', release: '2026.08.18' });
+  });
 </script>
 ```
+
+The wait is not decoration. The loader is installed with `defer`, so it does not run until the
+document has been parsed, and a call written straight into the markup beside it would reach for
+`window.SessionReplay` while it is still undefined.
 
 Those five keys, and no others:
 
