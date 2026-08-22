@@ -152,6 +152,64 @@ test('it offers no install where one is impossible', () => {
   assert.ok(!text.includes(COPY.install));
 });
 
+// The reader here is being asked for MORE than a click - go and find another browser, come
+// back, start again - and was given less to decide on than the person who can install it in
+// one. Everything they need to weigh that was already written and already translated; it was
+// only ever withheld by the state check.
+test('it says what a report carries, and that it is free, to somebody who must switch browsers', () => {
+  const doc = fakeDom();
+
+  showSplash({ doc, supported: false });
+  const text = textOf(doc);
+
+  COPY.captures.forEach((line) => assert.ok(text.includes(line), `missing: ${line}`));
+  assert.ok(text.includes(COPY.free));
+  // Still the state it is: no install button in a browser that cannot install.
+  assert.ok(!text.includes(COPY.install));
+});
+
+// The one thing on this overlay that solves the problem the reader actually has. The pitch
+// goes around it, never above it.
+test('it puts the link to carry away before the pitch, not after', () => {
+  const doc = fakeDom();
+
+  showSplash({ doc, supported: false });
+  const text = textOf(doc);
+
+  assert.ok(text.indexOf(COPY.copy) < text.indexOf(COPY.captures[0]));
+});
+
+// Told they cannot use it here and given no way to find out what it was. The brand is the
+// only thing on screen that can answer that, and on somebody else's site it is the first
+// time the reader has met us.
+test('it lets the reader find out who is asking', () => {
+  const doc = fakeDom();
+
+  showSplash({ doc, supported: false });
+
+  const link = doc.created.find(
+    (node) => node.nodeName === 'A' && String(node.href || '').includes('session-replay.com')
+  );
+
+  assert.ok(link, 'no link to the site');
+  assert.equal(link.rel, 'noopener');
+  assert.equal(link.target, '_blank');
+});
+
+// Already installed, so being told it is free and needs no account says nothing they do not
+// know, and pushes the instruction they DO need further down.
+test('it does not pitch to somebody who already has it installed', () => {
+  ['blocked', 'no-toolbar'].forEach((variant) => {
+    const doc = fakeDom();
+
+    showSplash({ doc, supported: true, variant });
+    const text = textOf(doc);
+
+    assert.ok(!text.includes(COPY.free), `${variant} should not pitch`);
+    assert.ok(!text.includes(COPY.captures[0]), `${variant} should not list captures`);
+  });
+});
+
 test('it shows a caller message on its own, without the pitch', () => {
   const doc = fakeDom();
 
