@@ -45,7 +45,7 @@ function fakeWindow() {
   };
 }
 
-test('holds the five keys a site can hand over', () => {
+test('holds what a site hands over, under the name it is stored by', () => {
   clearContext();
 
   const context = identify(
@@ -62,28 +62,69 @@ test('holds the five keys a site can hand over', () => {
   assert.deepEqual(context, {
     email: 'ada@example.com',
     plan: 'professional',
-    orderId: 'SR-1201',
+    order_id: 'SR-1201',
     release: '2026.08.18',
-    requestId: 'b1f4c0'
+    request_id: 'b1f4c0'
   });
 });
 
-// data-custom was the meta tag's escape hatch and the reason it could not be shown on a
-// report. Anything outside the vocabulary is dropped rather than carried.
-test('ignores anything that is not one of them', () => {
+// The keys are the site's to pick, the same as the sr-data- meta tags they sit beside. A
+// fixed list here would have meant that one of the two ways to send something could send it.
+test('keeps a key the library has never heard of', () => {
   clearContext();
 
-  identify({ email: 'ada@example.com', ssn: '000-00-0000', custom: { basket: [1, 2] } }, { win: fakeWindow() });
+  identify({ email: 'ada@example.com', warehouse: 'leeds-2', basketSize: 3 }, { win: fakeWindow() });
 
-  assert.deepEqual(getContext(), { email: 'ada@example.com' });
+  assert.deepEqual(getContext(), { email: 'ada@example.com', warehouse: 'leeds-2', basket_size: '3' });
+});
+
+// One field, however the page spells it, and under the name the extension already files a
+// pushed key by - so the call and the row it becomes on the report say the same word.
+test('camelCase, kebab and underscore are one key', () => {
+  clearContext();
+  const win = fakeWindow();
+
+  identify({ orderId: 'SR-1201' }, { win });
+  identify({ 'order-id': 'SR-1202' }, { win });
+  identify({ order_id: 'SR-1203' }, { win });
+
+  assert.deepEqual(getContext(), { order_id: 'SR-1203' });
 });
 
 test('drops a value with a shape to it rather than storing a blob', () => {
   clearContext();
 
-  identify({ plan: { name: 'professional' }, release: ['2026.08.18'] }, { win: fakeWindow() });
+  identify({ plan: { name: 'professional' }, release: ['2026.08.18'], basket: [1, 2] }, { win: fakeWindow() });
 
   assert.deepEqual(getContext(), {});
+});
+
+// The server's own numbers, kept here as politeness rather than as the authority.
+test('holds twenty keys, and still corrects one it already has', () => {
+  clearContext();
+  const win = fakeWindow();
+
+  for (let index = 0; index < 25; index += 1) identify({ [`key${index}`]: String(index) }, { win });
+
+  assert.equal(Object.keys(getContext()).length, 20);
+  assert.equal(getContext().key19, '19');
+  assert.equal(getContext().key20, undefined);
+
+  identify({ key0: 'corrected' }, { win });
+
+  assert.equal(getContext().key0, 'corrected');
+  assert.equal(Object.keys(getContext()).length, 20);
+});
+
+test('trims a key to 64 characters and a value to 1024', () => {
+  clearContext();
+
+  identify({ ['a'.repeat(90)]: 'b'.repeat(2000) }, { win: fakeWindow() });
+
+  const [name] = Object.keys(getContext());
+
+  assert.equal(name, 'a'.repeat(64));
+  assert.equal(getContext()[name].length, 1024);
 });
 
 // An SPA learns who somebody is on sign-in and which release it is running at boot. Neither
@@ -109,6 +150,18 @@ test('a null drops a key, for a sign-out', () => {
   assert.deepEqual(getContext(), { plan: 'professional' });
 });
 
+// The delete has to find the stored name too, or a sign-out spelled the other way silently
+// leaves the value on the page.
+test('a null drops the key however it is spelled', () => {
+  clearContext();
+  const win = fakeWindow();
+
+  identify({ orderId: 'SR-1201' }, { win });
+  identify({ 'order-id': null }, { win });
+
+  assert.deepEqual(getContext(), {});
+});
+
 test('hands back a copy, so a caller holding it cannot edit ours', () => {
   clearContext();
 
@@ -124,7 +177,7 @@ test('answers the extension when it asks, with what was pushed', () => {
 
   identify({ email: 'ada@example.com', requestId: 'b1f4c0' }, { win });
 
-  assert.deepEqual(win.ask(), { email: 'ada@example.com', requestId: 'b1f4c0' });
+  assert.deepEqual(win.ask(), { email: 'ada@example.com', request_id: 'b1f4c0' });
 });
 
 // Nothing has been handed over, so there is nothing to answer with - and an empty answer

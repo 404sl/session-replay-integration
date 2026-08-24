@@ -14,7 +14,7 @@ it, and explains where to get it when they do not.
 ### A script tag
 
 ```html
-<script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.4.0.js" defer></script>
 
 <button data-sr-trigger>Report a bug</button>
 ```
@@ -47,7 +47,7 @@ states - and you make no styling decisions at all:
 
 ```html
 <head>
-  <script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
+  <script src="https://session-replay.com/integration/session-replay-0.4.0.js" defer></script>
 </head>
 ...
 <div data-session-replay-button></div>
@@ -61,8 +61,8 @@ stylesheet and write the four lines:
 
 ```html
 <head>
-  <link rel="stylesheet" href="https://session-replay.com/integration/session-replay-0.3.1.css">
-  <script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
+  <link rel="stylesheet" href="https://session-replay.com/integration/session-replay-0.4.0.css">
+  <script src="https://session-replay.com/integration/session-replay-0.4.0.js" defer></script>
 </head>
 ...
 <div class="sr-report">
@@ -102,7 +102,7 @@ Give the attribute a corner name and it floats there instead:
 Style your own trigger, or take a floating one:
 
 ```html
-<script src="https://session-replay.com/integration/session-replay-0.3.1.js" defer></script>
+<script src="https://session-replay.com/integration/session-replay-0.4.0.js" defer></script>
 <script>
   addEventListener('load', () => SessionReplay.mountButton());
 </script>
@@ -233,7 +233,7 @@ The wait is not decoration. The loader is installed with `defer`, so it does not
 document has been parsed, and a call written straight into the markup beside it would reach for
 `window.SessionReplay` while it is still undefined.
 
-Those five keys, and no others:
+Those five are what most sites send, and they are worth naming:
 
 | Key | What it is for |
 | --- | --- |
@@ -243,11 +243,24 @@ Those five keys, and no others:
 | `release` | the build the page came from |
 | `requestId` | the server request that rendered it, to join to your own logs |
 
+They are not a limit. Send whatever you correlate by — a warehouse, a tenant, a feature
+flag — the same way you would with a `sr-data-` meta tag. Keys run to 64 characters and
+values to 1024, and a report carries **20 keys in total**. That twenty is one budget shared
+with your `sr-data-` tags rather than an allowance on top of them: the two are merged with
+the tags counted first, so past twenty between them it is the pushed keys that fall off the
+end.
+
+Keys are stored under an underscored name: `orderId`, `order-id` and `order_id` are one
+field, filed as `order_id`. Write them however your code reads best; the report shows one
+row either way. A meta tag's name is a different matter — it is taken as written after the
+`sr-data-` prefix, so `sr-data-order_id` lands on that same row while `sr-data-order-id`
+gets a row of its own.
+
 Pass any subset. Repeat calls **merge**, so a single-page app can add to it as it learns
 more — sign-in, then a route change — rather than repeating everything each time. A key
-given as `null` is dropped, which is what a sign-out wants. Anything outside the five is
-ignored, and so is any value that is not a plain scalar: there is no free-form blob here,
-because nothing could validate one or show it sensibly on a report.
+given as `null` is dropped, which is what a sign-out wants. A value that is not a plain
+scalar is refused: an object or an array cannot be shown sensibly on a report, so it is
+dropped here rather than travelling to be dropped later.
 
 **We never go looking for any of it.** The library reads nothing out of your DOM — no
 scraping a header for an email, no guessing a plan from a badge. It holds what you pushed
