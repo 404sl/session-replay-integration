@@ -37,9 +37,10 @@ const MAX_VALUE_LENGTH = 1024;
  * dropped what it cannot keep. The API stays camelCase, which is what a caller writing
  * JavaScript expects; the stored name is spelled the way it will be read.
  *
- * A meta tag is a separate matter and is normalised nowhere: its name is taken as written
- * after `sr-data-`, so `sr-data-order_id` shares this row today while `sr-data-order-id`
- * gets one of its own.
+ * A meta tag's name goes the same way once its `sr-data-` prefix is off, so the two routes
+ * converge: `sr-data-order-id`, `sr-data-orderId` and `identify({ orderId })` all land on
+ * `order_id`, and a site that uses both for one field gets one row rather than two
+ * spellings of the same thing.
  *
  * @param {string} key as the page spelled it
  * @returns {string} the name the value is filed under

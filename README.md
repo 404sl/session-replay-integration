@@ -252,9 +252,9 @@ end.
 
 Keys are stored under an underscored name: `orderId`, `order-id` and `order_id` are one
 field, filed as `order_id`. Write them however your code reads best; the report shows one
-row either way. A meta tag's name is a different matter — it is taken as written after the
-`sr-data-` prefix, so `sr-data-order_id` lands on that same row while `sr-data-order-id`
-gets a row of its own.
+row either way. A meta tag's name goes the same way once the `sr-data-` prefix is off, so
+the two routes meet: `sr-data-order-id`, `sr-data-orderId` and `identify({ orderId })` all
+land on that one `order_id` row.
 
 Pass any subset. Repeat calls **merge**, so a single-page app can add to it as it learns
 more — sign-in, then a route change — rather than repeating everything each time. A key
