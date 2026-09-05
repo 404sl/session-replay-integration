@@ -101,17 +101,33 @@ validator against what `zapier push` would upload; without it, that test skips a
 
 ## Pushing it
 
-Needs a Zapier developer account, which is why it is not done from here.
+Needs a Zapier developer account, which is why it is not done from here. The CLI's binary is
+`zapier-platform`, and registering comes before pushing: `push` builds and uploads against
+the integration named in `.zapierapprc`, and that file is what `register` creates.
 
 ```
 cd integration/zapier
 npm install
-npx zapier login
-npx zapier validate
-npx zapier push
+npx zapier-platform login
+npx zapier-platform register
+npx zapier-platform validate
+npx zapier-platform push
 ```
 
-`zapier login` asks for the Zapier account email and password, then writes a deploy key to
-`~/.zapierrc`. `zapier push` uploads the definition and prints the app's admin URL; it
-creates the app on the first push, so nothing needs to exist in the Zapier console first.
-Submitting the app for directory review is a separate step in that console.
+`login` asks for the Zapier account email and password, and a one-time code if the account
+has two-factor turned on; it writes a deploy key to `~/.zapierrc`. An account that signs in
+through Google or another single sign-on button has no password - use
+`npx zapier-platform login --sso` and paste a deploy key from the Zapier dashboard instead.
+
+`register` asks for the integration's title, a one-sentence description, a homepage URL, the
+audience (start private - it can be made public when it is submitted), your role in relation
+to Session Replay, a category, and whether to subscribe to platform email. It writes
+`.zapierapprc`, which is git-ignored here because it names one account's integration.
+
+`push` then validates and uploads. Style warnings do not stop it; only style errors do, and
+`npx zapier-platform validate` lists both. Expect a warning about the triggers having no
+`performSubscribe` - that is the static webhook decision above, and `--skip-validation` will
+bypass the check entirely if it ever hardens into an error.
+
+Submitting the integration for directory review is a separate step, done in the Zapier
+console rather than from the command line.
