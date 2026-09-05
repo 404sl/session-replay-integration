@@ -27,11 +27,13 @@ const delivery = (payload, { secret = null, deliveryId = DELIVERY_ID } = {}) => 
   return { cleanedRequest: payload, rawRequest: { content, headers }, inputData: {} };
 };
 
-const keyed = (event) => Object.values(app.triggers).find((trigger) => trigger.operation.sample.event === event);
+const hooks = () => Object.values(app.triggers).filter((trigger) => trigger.operation.type === 'hook');
+
+const keyed = (event) => hooks().find((trigger) => trigger.operation.sample.event === event);
 
 test('every event the app emits has a trigger', () => {
   assert.deepEqual(
-    Object.keys(app.triggers).sort(),
+    hooks().map((trigger) => trigger.key).sort(),
     ['report_created', 'report_first_viewed', 'report_sent', 'report_severity_changed', 'report_status_changed']
   );
 
@@ -174,7 +176,7 @@ test('an unsigned delivery is accepted when no signing key was given', async () 
 });
 
 test('every trigger asks for its own signing key rather than a shared one', () => {
-  Object.values(app.triggers).forEach((trigger) => {
+  hooks().forEach((trigger) => {
     const byKey = Object.fromEntries(trigger.operation.inputFields.map((field) => [field.key, field]));
 
     assert.equal(byKey.signing_key.required, false);
@@ -184,7 +186,7 @@ test('every trigger asks for its own signing key rather than a shared one', () =
 });
 
 test('the test-trigger step answers with the sample, so it needs no API call', async () => {
-  for (const trigger of Object.values(app.triggers)) {
+  for (const trigger of hooks()) {
     const listed = await trigger.operation.performList({}, { inputData: {} });
 
     assert.deepEqual(listed, [sampleFor(trigger.operation.sample.event)]);
@@ -192,7 +194,7 @@ test('the test-trigger step answers with the sample, so it needs no API call', a
 });
 
 test('every trigger ships a sample shaped like what perform returns', async () => {
-  for (const trigger of Object.values(app.triggers)) {
+  for (const trigger of hooks()) {
     const { sample } = trigger.operation;
     const [live] = await trigger.operation.perform({}, delivery(payloadFor(sample.event)));
 
@@ -203,7 +205,7 @@ test('every trigger ships a sample shaped like what perform returns', async () =
 });
 
 test('every output field names something the sample actually carries', () => {
-  Object.values(app.triggers).forEach((trigger) => {
+  hooks().forEach((trigger) => {
     const { sample, outputFields } = trigger.operation;
 
     outputFields.forEach(({ key }) => {
@@ -336,7 +338,7 @@ test('a pasted signing key wins over the one subscribe stored', async () => {
 });
 
 test('firing and the test step never call our own API', async () => {
-  for (const trigger of Object.values(app.triggers)) {
+  for (const trigger of hooks()) {
     const { sample } = trigger.operation;
 
     await trigger.operation.perform(refusing, delivery(payloadFor(sample.event)));
@@ -345,7 +347,7 @@ test('firing and the test step never call our own API', async () => {
 });
 
 test('every trigger requires the API token that lets it subscribe itself', () => {
-  Object.values(app.triggers).forEach((trigger) => {
+  hooks().forEach((trigger) => {
     const byKey = Object.fromEntries(trigger.operation.inputFields.map((field) => [field.key, field]));
 
     assert.equal(byKey.api_token.required, true);
@@ -356,10 +358,199 @@ test('every trigger requires the API token that lets it subscribe itself', () =>
 });
 
 test('the signing key help asks for the key rather than telling the Zap to do without it', () => {
-  Object.values(app.triggers).forEach((trigger) => {
+  hooks().forEach((trigger) => {
     const byKey = Object.fromEntries(trigger.operation.inputFields.map((field) => [field.key, field]));
 
     assert.match(byKey.signing_key.helpText, /Paste it/);
     assert.doesNotMatch(byKey.signing_key.helpText, /Leave it blank/);
+  });
+});
+
+const teamList = app.triggers.teamList;
+
+class StubbedZapierError extends Error {
+  constructor(message, code, status) {
+    super(message);
+    this.name = 'ZapierError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
+const api = (...replies) => {
+  const calls = [];
+  const queue = [...replies];
+
+  return {
+    calls,
+    z: {
+      errors: { Error: StubbedZapierError },
+      request: async (options) => {
+        calls.push(options);
+
+        const reply = queue.length > 1 ? queue.shift() : queue[0];
+
+        return {
+          status: reply.status ?? 200,
+          data: reply.data,
+          throwForStatus() {
+            throw new Error(`the platform threw for HTTP ${reply.status}`);
+          }
+        };
+      }
+    }
+  };
+};
+
+const teamsPage = (names, next) => ({
+  status: 200,
+  data: {
+    data: names.map((name, index) => ({ id: `${name}-${index}`, type: 'team', attributes: { name } })),
+    links: next ? { next } : {},
+    meta: { has_next_page: Boolean(next) }
+  }
+});
+
+const subscribeWith = async (inputData, reply = { status: 201, data: created('42', SECRET) }) => {
+  const trigger = keyed(events.REPORT_CREATED);
+  const { z, calls } = api(reply);
+
+  const subscription = await trigger.operation.performSubscribe(z, {
+    targetUrl: TARGET_URL,
+    inputData: { api_token: TOKEN, ...inputData }
+  });
+
+  return { calls, subscription };
+};
+
+test('a Zap that names no team sends no team_id, so the destination stays where it is', async () => {
+  const { calls } = await subscribeWith({});
+
+  assert.equal('team_id' in calls[0].body, false);
+});
+
+test('a team of nothing but spaces counts as no team at all', async () => {
+  const { calls } = await subscribeWith({ team_id: '   ' });
+
+  assert.equal('team_id' in calls[0].body, false);
+});
+
+test('the team the author picked is the team the destination is created on', async () => {
+  const { calls } = await subscribeWith({ team_id: 'a-team-id' });
+
+  assert.equal(calls[0].body.team_id, 'a-team-id');
+  assert.deepEqual(calls[0].body, {
+    url: TARGET_URL,
+    events: [events.REPORT_CREATED],
+    team_id: 'a-team-id'
+  });
+});
+
+test('a team the account belongs to but does not administer says so', async () => {
+  await assert.rejects(
+    async () => subscribeWith({ team_id: 'a-team-id' }, { status: 403, data: {} }),
+    (error) => {
+      assert.equal(error.message, hook.TEAM_FORBIDDEN_MESSAGE);
+      assert.equal(error.code, 'TeamForbidden');
+      assert.equal(error.status, 403);
+
+      return true;
+    }
+  );
+});
+
+test('a team this account has nothing to do with asks for another one', async () => {
+  await assert.rejects(
+    async () => subscribeWith({ team_id: 'a-team-id' }, { status: 404, data: {} }),
+    (error) => {
+      assert.equal(error.message, hook.TEAM_NOT_FOUND_MESSAGE);
+      assert.equal(error.code, 'TeamNotFound');
+      assert.equal(error.status, 404);
+
+      return true;
+    }
+  );
+});
+
+test('any other refusal is left to the platform rather than dressed up as a team problem', async () => {
+  await assert.rejects(
+    async () => subscribeWith({ team_id: 'a-team-id' }, { status: 500, data: {} }),
+    /the platform threw for HTTP 500/
+  );
+});
+
+test('a refusal with no team named is left alone, because it cannot be about the team field', async () => {
+  await assert.rejects(
+    async () => subscribeWith({}, { status: 404, data: {} }),
+    /the platform threw for HTTP 404/
+  );
+
+  await assert.rejects(
+    async () => subscribeWith({ team_id: ' ' }, { status: 403, data: {} }),
+    /the platform threw for HTTP 403/
+  );
+});
+
+test('the team field is offered the teams this token can see, by name', async () => {
+  const { z, calls } = api(teamsPage(['Zebra crew', 'apricot', 'Mango']));
+
+  const teams = await teamList.operation.perform(z, { inputData: { api_token: TOKEN } });
+
+  assert.equal(calls[0].method, 'GET');
+  assert.match(calls[0].url, /^https:\/\/session-replay\.com\/api\/v1\/teams\?/);
+  assert.equal(calls[0].headers.Authorization, `Bearer ${TOKEN}`);
+  assert.deepEqual(teams.map((team) => team.name), ['apricot', 'Mango', 'Zebra crew']);
+  assert.deepEqual(teams.map((team) => team.id), ['apricot-1', 'Mango-2', 'Zebra crew-0']);
+});
+
+test('a second page of teams is fetched, so a long list is not silently cut in half', async () => {
+  const next = 'https://session-replay.com/api/v1/teams?page%5Bafter%5D=cursor&page%5Bsize%5D=100';
+  const { z, calls } = api(teamsPage(['Ants'], next), teamsPage(['Bees']));
+
+  const teams = await teamList.operation.perform(z, { inputData: { api_token: TOKEN } });
+
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].url, next);
+  assert.deepEqual(teams.map((team) => team.name), ['Ants', 'Bees']);
+});
+
+test('an endless list of pages stops at the cap rather than fetching for ever', async () => {
+  const next = 'https://session-replay.com/api/v1/teams?page%5Bafter%5D=cursor&page%5Bsize%5D=100';
+  const { z, calls } = api(teamsPage(['Ants'], next));
+
+  const teams = await teamList.operation.perform(z, { inputData: { api_token: TOKEN } });
+
+  assert.equal(calls.length, hook.TEAM_PAGE_LIMIT);
+  assert.equal(teams.length, hook.TEAM_PAGE_LIMIT);
+});
+
+test('a listing that fails says the teams could not be read rather than showing an empty menu', async () => {
+  const { z } = api({ status: 401, data: {} });
+
+  await assert.rejects(
+    async () => teamList.operation.perform(z, { inputData: { api_token: TOKEN } }),
+    (error) => {
+      assert.equal(error.message, hook.teamListFailedMessage(401));
+      assert.equal(error.code, 'TeamListFailed');
+
+      return true;
+    }
+  );
+});
+
+test('the team menu asks for the API token rather than calling the API without one', async () => {
+  await assert.rejects(
+    async () => teamList.operation.perform(refusing, { inputData: {} }),
+    hook.MissingApiToken
+  );
+});
+
+test('the team field is optional, so a Zap with one team is not asked a question with one answer', () => {
+  hooks().forEach((trigger) => {
+    const byKey = Object.fromEntries(trigger.operation.inputFields.map((field) => [field.key, field]));
+
+    assert.equal(byKey.team_id.required, false);
+    assert.match(byKey.team_id.helpText, /Leave this blank to use your personal team/);
+    assert.match(byKey.team_id.helpText, /owner or admin/);
   });
 });
