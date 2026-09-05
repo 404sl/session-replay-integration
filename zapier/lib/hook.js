@@ -61,6 +61,7 @@ const INPUT_FIELDS = [
     label: 'API token',
     type: 'password',
     required: true,
+    altersDynamicFields: true,
     helpText: API_TOKEN_HELP
   },
   {
@@ -144,7 +145,7 @@ const performSubscribeFor = (event) => async (z, bundle) => {
   });
 
   if (response.status >= 400) {
-    const refused = refusal(z, response.status);
+    const refused = team ? refusal(z, response.status) : null;
 
     if (refused) throw refused;
 
@@ -197,6 +198,7 @@ const teamListTrigger = {
     hidden: true
   },
   operation: {
+    inputFields: [{ key: 'api_token', label: 'API token', type: 'password', required: true }],
     perform: listTeams
   }
 };

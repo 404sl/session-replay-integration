@@ -76,6 +76,22 @@ test('the team field names the trigger that fills it', () => {
     });
 });
 
+test('the hidden team trigger declares the token it is filled from', () => {
+  const declared = app.triggers.teamList.operation.inputFields;
+
+  assert.deepEqual(declared, [{ key: 'api_token', label: 'API token', type: 'password', required: true }]);
+});
+
+test('pasting the token refreshes the team menu, because the menu is drawn from it', () => {
+  Object.values(app.triggers)
+    .filter((trigger) => trigger.operation.type === 'hook')
+    .forEach((trigger) => {
+      const token = trigger.operation.inputFields.find((field) => field.key === 'api_token');
+
+      assert.equal(token.altersDynamicFields, true);
+    });
+});
+
 test('the app offers no actions, because it only listens', () => {
   assert.deepEqual(app.creates, {});
   assert.deepEqual(app.searches, {});

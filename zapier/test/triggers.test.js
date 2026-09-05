@@ -479,6 +479,18 @@ test('any other refusal is left to the platform rather than dressed up as a team
   );
 });
 
+test('a refusal with no team named is left alone, because it cannot be about the team field', async () => {
+  await assert.rejects(
+    async () => subscribeWith({}, { status: 404, data: {} }),
+    /the platform threw for HTTP 404/
+  );
+
+  await assert.rejects(
+    async () => subscribeWith({ team_id: ' ' }, { status: 403, data: {} }),
+    /the platform threw for HTTP 403/
+  );
+});
+
 test('the team field is offered the teams this token can see, by name', async () => {
   const { z, calls } = api(teamsPage(['Zebra crew', 'apricot', 'Mango']));
 
