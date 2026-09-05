@@ -1,4 +1,9 @@
-const { included } = require('./api');
+class UnidentifiedDelivery extends Error {
+  constructor(message) {
+    super(message);
+    this.name = 'UnidentifiedDelivery';
+  }
+}
 
 const reportOf = (source) => ({
   id: source.id ?? null,
@@ -12,12 +17,23 @@ const reportOf = (source) => ({
 
 const siteOf = (site) => (site ? { id: site.id ?? null, domain: site.domain ?? null } : null);
 
+const identify = (payload, report) => {
+  if (!payload?.sent_at) {
+    throw new UnidentifiedDelivery(
+      'This delivery carried neither an X-Session-Replay-Delivery header nor a sent_at, ' +
+        'so there is nothing to deduplicate it by.'
+    );
+  }
+
+  return `${payload.event}:${report.id}:${payload.sent_at}`;
+};
+
 const fromWebhook = (payload, deliveryId) => {
   const data = payload?.data ?? {};
   const report = data.report ?? {};
 
   return {
-    id: deliveryId || `${payload?.event}:${report.id}`,
+    id: deliveryId || identify(payload, report),
     event: payload?.event ?? null,
     version: payload?.version ?? null,
     sent_at: payload?.sent_at ?? null,
@@ -26,33 +42,4 @@ const fromWebhook = (payload, deliveryId) => {
   };
 };
 
-const fromApi = (resource, document, event) => {
-  const attributes = resource.attributes ?? {};
-  const link = resource.relationships?.site?.data;
-  const site = link ? included(document, 'site', link.id) : null;
-
-  return {
-    id: resource.id,
-    event,
-    version: 1,
-    sent_at: attributes.updated_at ?? null,
-    report: reportOf({
-      id: resource.id,
-      share_token: attributes.share_token,
-      share_url: attributes.share_url,
-      status: attributes.resolution_status,
-      severity: null,
-      created_at: attributes.created_at,
-      updated_at: attributes.updated_at
-    }),
-    site: site ? siteOf({ id: site.id, domain: site.attributes?.domain }) : null
-  };
-};
-
-const fromApiCollection = (document, event) => {
-  const rows = Array.isArray(document?.data) ? document.data : [];
-
-  return rows.map((resource) => fromApi(resource, document, event));
-};
-
-module.exports = { reportOf, fromWebhook, fromApi, fromApiCollection };
+module.exports = { UnidentifiedDelivery, reportOf, identify, fromWebhook };

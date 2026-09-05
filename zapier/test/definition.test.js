@@ -2,7 +2,6 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const app = require('../app');
-const { authentication } = require('../authentication');
 
 const optional = (name) => {
   try {
@@ -16,10 +15,22 @@ const validator = optional('zapier-platform-core/src/tools/schema');
 const core = optional('zapier-platform-core');
 const installed = validator && core ? false : 'the Zapier platform packages are not installed';
 
-test('the app authenticates with a key rather than an OAuth handshake', () => {
-  assert.equal(app.authentication.type, 'custom');
-  assert.equal(app.authentication, authentication);
-  assert.equal(typeof app.authentication.test, 'function');
+test('the app asks for no connection, because it only receives deliveries', () => {
+  assert.equal(app.authentication, undefined);
+  assert.deepEqual(app.beforeRequest, []);
+  assert.deepEqual(app.afterResponse, []);
+});
+
+test('nothing in the app calls the Session Replay API', () => {
+  const fs = require('node:fs');
+  const root = `${__dirname}/..`;
+  const source = fs
+    .readdirSync(root, { recursive: true })
+    .filter((name) => name.endsWith('.js') && !name.startsWith('test'))
+    .map((name) => fs.readFileSync(`${root}/${name}`, 'utf8'))
+    .join('\n');
+
+  assert.doesNotMatch(source, /z\.request|\/api\/v1|Authorization/);
 });
 
 test('every trigger is an inbound hook rather than a poll of our own API', () => {

@@ -9,12 +9,11 @@ would receive.
 
 ```
 zapier/
-  index.js          what gets pushed - the app plus its version numbers
-  app.js            the definition itself, with no dependency on the platform packages
-  authentication.js the API token and the optional signing key
-  lib/              the event names, signature checking, and the payload mapping
-  triggers/         one trigger per event
-  test/             node --test, no install required
+  index.js     what gets pushed - the app plus its version numbers
+  app.js       the definition itself, with no dependency on the platform packages
+  lib/         the event names, signature checking, and the payload mapping
+  triggers/    one trigger per event
+  test/        node --test, no install required
 ```
 
 `app.js` is deliberately separate from `index.js`. Only `index.js` reaches for
@@ -61,17 +60,48 @@ That is what makes deduplication correct in both directions: a retried delivery 
 id and fires once, while two status changes to the same report are two deliveries and fire
 twice.
 
+If the header is not readable, `id` falls back to the event, the report id and `sent_at`
+together, which keeps both of those properties: `sent_at` is stored with the delivery when
+it is queued, so every retry of one delivery repeats it and two separate deliveries never
+share it. A delivery carrying neither the header nor a `sent_at` is refused, because any id
+that could be built from what is left would collapse a report's whole history into one
+event.
+
 ## Setting up a Zap
 
 1. In Zapier, add a Session Replay trigger and copy the webhook URL it gives you.
 2. In Session Replay, go to **Connectors**, add a webhook destination, paste that URL, and
    tick the events you want.
-3. Copy the signing key shown once on that screen, and paste it into the Zapier connection.
+3. Copy the signing key shown once on that screen, and paste it into the trigger's
+   **Webhook signing key** field.
+
+There is no account connection to make: the integration never calls the Session Replay API,
+so it has nothing to sign in to.
 
 Step 3 is optional. Given the key, every incoming request is checked against the
 `X-Session-Replay-Signature` header - HMAC-SHA256 over `<unix timestamp>.<raw body>`, with
 the timestamp inside the signed material and a five minute tolerance, which is exactly what
 the sending side does. Without it, the Zap accepts anything posted to its URL.
+
+The key is asked for on the trigger rather than on a connection because it belongs to one
+webhook destination. Every Zap has its own webhook URL, so every Zap is its own destination
+with its own secret, and rotating that secret on the Connectors screen stops that one Zap
+until the new key is pasted in.
+
+## Why there is no account connection
+
+An earlier draft asked for an API token from **Settings** and used it to fetch recent
+reports for the test step. That token is a JWT with a fixed lifetime - one day, as the app
+is configured - and there is no refresh the integration can drive, because refresh tokens
+are single-use and mint a replacement session, which Zapier has nowhere to put. The token
+would have worked on the day it was pasted and returned `401` from then on.
+
+The API buys nothing this integration needs: deliveries arrive by push, so the connection
+would exist only to fill the test step. It fills that from the samples instead. OAuth is the
+scheme that would survive - `/oauth/authorize` and `/oauth/token` are already served, and
+Zapier stores rotated tokens - but it needs a `client_id` that resolves to a metadata
+document declaring Zapier's redirect URI, and that URI is only known once the integration is
+registered.
 
 ## Why the URL is pasted by hand
 
@@ -84,10 +114,8 @@ delivery it subscribes to is already the one these triggers read.
 
 ## Testing a trigger before an event has happened
 
-`performList` answers Zapier's "test trigger" step from `GET /api/v1/replays`, using the API
-token on the connection, and maps the result into the same shape a delivery produces. One
-field cannot be filled from there: the list endpoint does not serve severity, so
-`report.severity` is `null` in test data and carries a real value in live deliveries.
+`performList` answers Zapier's "test trigger" step with the trigger's own sample, so the
+step works before the first delivery and without a network call.
 
 ## Running the tests
 
@@ -95,9 +123,9 @@ field cannot be filled from there: the list endpoint does not serve severity, so
 npm test
 ```
 
-No install is needed - the tests import the app definition directly and stub `z` and
-`bundle`. With `zapier-platform-core` installed, one further test runs the platform's own
-validator against what `zapier push` would upload; without it, that test skips and says so.
+No install is needed - the tests import the app definition directly and stub `bundle`. With
+`zapier-platform-core` installed, one further test runs the platform's own validator against
+what `zapier push` would upload; without it, that test skips and says so.
 
 ## Pushing it
 
@@ -125,9 +153,11 @@ to Session Replay, a category, and whether to subscribe to platform email. It wr
 `.zapierapprc`, which is git-ignored here because it names one account's integration.
 
 `push` then validates and uploads. Style warnings do not stop it; only style errors do, and
-`npx zapier-platform validate` lists both. Expect a warning about the triggers having no
-`performSubscribe` - that is the static webhook decision above, and `--skip-validation` will
-bypass the check entirely if it ever hardens into an error.
+`npx zapier-platform validate` lists both. Expect warnings about the triggers having no
+`performSubscribe` and about the app declaring no authentication - both are the decisions
+above, and `--without-style` skips the style pass if either ever hardens into an error. The
+schema calls both of these expectations of a public app, so directory review is where they
+have to be argued rather than the push.
 
 Submitting the integration for directory review is a separate step, done in the Zapier
 console rather than from the command line.

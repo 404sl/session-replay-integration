@@ -5,14 +5,17 @@ const crypto = require('node:crypto');
 const app = require('../app');
 const events = require('../lib/events');
 const signature = require('../lib/signature');
-const { payloadFor, DELIVERY_ID } = require('../lib/samples');
+const report = require('../lib/report');
+const { payloadFor, sampleFor, DELIVERY_ID } = require('../lib/samples');
 
 const SECRET = 'whsec_a-destination-signing-key';
 
 const delivery = (payload, { secret = null, deliveryId = DELIVERY_ID } = {}) => {
   const content = JSON.stringify(payload);
   const seconds = Math.floor(Date.now() / 1000);
-  const headers = { 'X-Session-Replay-Event': payload.event, 'X-Session-Replay-Delivery': deliveryId };
+  const headers = { 'X-Session-Replay-Event': payload.event };
+
+  if (deliveryId) headers['X-Session-Replay-Delivery'] = deliveryId;
 
   if (secret) {
     const digest = crypto.createHmac('sha256', secret).update(`${seconds}.${content}`).digest('hex');
@@ -20,7 +23,7 @@ const delivery = (payload, { secret = null, deliveryId = DELIVERY_ID } = {}) => 
     headers['X-Session-Replay-Signature'] = `t=${seconds},v1=${digest}`;
   }
 
-  return { cleanedRequest: payload, rawRequest: { content, headers }, authData: {} };
+  return { cleanedRequest: payload, rawRequest: { content, headers }, inputData: {} };
 };
 
 const keyed = (event) => Object.values(app.triggers).find((trigger) => trigger.operation.sample.event === event);
@@ -78,24 +81,58 @@ test('a retry of one delivery keeps its id, so Zapier sees it once', async () =>
   assert.equal(first[0].id, retried[0].id);
 });
 
-test('the signature is checked when the connection carries a signing key', async () => {
+test('without the delivery header two changes to one report still fire twice', async () => {
+  const trigger = keyed(events.REPORT_STATUS_CHANGED);
+  const earlier = payloadFor(events.REPORT_STATUS_CHANGED);
+  const later = { ...earlier, sent_at: '2026-09-05T12:03:11Z' };
+
+  const first = await trigger.operation.perform({}, delivery(earlier, { deliveryId: null }));
+  const second = await trigger.operation.perform({}, delivery(later, { deliveryId: null }));
+
+  assert.equal(first[0].report.id, second[0].report.id);
+  assert.notEqual(first[0].id, second[0].id);
+});
+
+test('without the delivery header a retry of one delivery still fires once', async () => {
+  const trigger = keyed(events.REPORT_CREATED);
+  const payload = payloadFor(events.REPORT_CREATED);
+
+  const first = await trigger.operation.perform({}, delivery(payload, { deliveryId: null }));
+  const retried = await trigger.operation.perform({}, delivery(payload, { deliveryId: null }));
+
+  assert.equal(first[0].id, retried[0].id);
+});
+
+test('a delivery carrying neither a delivery header nor a sent_at is refused', async () => {
+  const trigger = keyed(events.REPORT_CREATED);
+  const payload = payloadFor(events.REPORT_CREATED);
+
+  delete payload.sent_at;
+
+  await assert.rejects(
+    async () => trigger.operation.perform({}, delivery(payload, { deliveryId: null })),
+    report.UnidentifiedDelivery
+  );
+});
+
+test('the signature is checked when the Zap carries a signing key', async () => {
   const trigger = keyed(events.REPORT_CREATED);
   const payload = payloadFor(events.REPORT_CREATED);
 
   const signed = delivery(payload, { secret: SECRET });
-  signed.authData = { signing_key: SECRET };
+  signed.inputData = { signing_key: SECRET };
 
   const results = await trigger.operation.perform({}, signed);
 
   assert.equal(results.length, 1);
 });
 
-test('a forged delivery is refused when the connection carries a signing key', async () => {
+test('a forged delivery is refused when the Zap carries a signing key', async () => {
   const trigger = keyed(events.REPORT_CREATED);
   const payload = payloadFor(events.REPORT_CREATED);
 
   const forged = delivery(payload, { secret: 'not-the-signing-key' });
-  forged.authData = { signing_key: SECRET };
+  forged.inputData = { signing_key: SECRET };
 
   await assert.rejects(
     async () => trigger.operation.perform({}, forged),
@@ -103,13 +140,26 @@ test('a forged delivery is refused when the connection carries a signing key', a
   );
 });
 
-test('an unsigned delivery is refused when the connection carries a signing key', async () => {
+test('an unsigned delivery is refused when the Zap carries a signing key', async () => {
   const trigger = keyed(events.REPORT_CREATED);
   const unsigned = delivery(payloadFor(events.REPORT_CREATED));
-  unsigned.authData = { signing_key: SECRET };
+  unsigned.inputData = { signing_key: SECRET };
 
   await assert.rejects(
     async () => trigger.operation.perform({}, unsigned),
+    signature.InvalidSignature
+  );
+});
+
+test('a key on one Zap is not read from another, because it lives on the trigger', async () => {
+  const trigger = keyed(events.REPORT_CREATED);
+  const payload = payloadFor(events.REPORT_CREATED);
+
+  const signed = delivery(payload, { secret: SECRET });
+  signed.inputData = { signing_key: 'the-other-destinations-key' };
+
+  await assert.rejects(
+    async () => trigger.operation.perform({}, signed),
     signature.InvalidSignature
   );
 });
@@ -120,6 +170,24 @@ test('an unsigned delivery is accepted when no signing key was given', async () 
   const results = await trigger.operation.perform({}, delivery(payloadFor(events.REPORT_CREATED)));
 
   assert.equal(results.length, 1);
+});
+
+test('every trigger asks for its own signing key rather than a shared one', () => {
+  Object.values(app.triggers).forEach((trigger) => {
+    const byKey = Object.fromEntries(trigger.operation.inputFields.map((field) => [field.key, field]));
+
+    assert.equal(byKey.signing_key.required, false);
+    assert.equal(byKey.signing_key.type, 'password');
+    assert.match(byKey.signing_key.helpText, /each Zap has its own/);
+  });
+});
+
+test('the test-trigger step answers with the sample, so it needs no API call', async () => {
+  for (const trigger of Object.values(app.triggers)) {
+    const listed = await trigger.operation.performList({}, { inputData: {} });
+
+    assert.deepEqual(listed, [sampleFor(trigger.operation.sample.event)]);
+  }
 });
 
 test('every trigger ships a sample shaped like what perform returns', async () => {
