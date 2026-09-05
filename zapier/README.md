@@ -11,7 +11,7 @@ would receive.
 zapier/
   index.js     what gets pushed - the app plus its version numbers
   app.js       the definition itself, with no dependency on the platform packages
-  lib/         the event names, signature checking, and the payload mapping
+  lib/         the event names, signature checking, subscribing, and the payload mapping
   triggers/    one trigger per event
   test/        node --test, no install required
 ```
@@ -69,24 +69,35 @@ event.
 
 ## Setting up a Zap
 
-1. In Zapier, add a Session Replay trigger and copy the webhook URL it gives you.
-2. In Session Replay, go to **Connectors**, add a webhook destination, paste that URL, and
-   tick the events you want.
-3. Copy the signing key shown once on that screen, and paste it into the trigger's
-   **Webhook signing key** field.
+One way. Add a Session Replay trigger, pick the event, and paste a token from **Settings**
+into its **API token** field. Turning the Zap on registers its own webhook URL as a webhook
+destination subscribed to that one event; turning the Zap off removes that destination again.
 
-There is no account connection to make: the integration never calls the Session Replay API,
-so it has nothing to sign in to.
+The token is required, and deliberately so. Registering is the only thing that gives Session
+Replay somewhere to send to, and there is no webhook URL to copy out of Zapier and paste in
+by hand: a trigger that defines subscribe and unsubscribe is a REST hook, and Zapier hands
+the URL to `performSubscribe` rather than showing it. A Zap turned on without a token would
+therefore be subscribed to nothing and would sit there receiving nothing, so turning it on
+without one fails instead, with a message saying where to get a token.
 
-Step 3 is optional. Given the key, every incoming request is checked against the
-`X-Session-Replay-Signature` header - HMAC-SHA256 over `<unix timestamp>.<raw body>`, with
-the timestamp inside the signed material and a five minute tolerance, which is exactly what
-the sending side does. Without it, the Zap accepts anything posted to its URL.
+There is still no account connection to make. The token is a field on the trigger, used at
+the moment the Zap is turned on and off, not a credential Zapier holds for the account.
 
-The key is asked for on the trigger rather than on a connection because it belongs to one
-webhook destination. Every Zap has its own webhook URL, so every Zap is its own destination
-with its own secret, and rotating that secret on the Connectors screen stops that one Zap
-until the new key is pasted in.
+Fill in **Webhook signing key** as well. Subscribing hands the key back with the destination
+and the Zap keeps it, but a pasted key is the only one the Zap is certain to be holding when
+a delivery arrives, and without a key it accepts anything posted to its URL. To read the key
+once the Zap has registered itself, open that destination under **Connectors**, rotate its
+secret, and copy what the screen shows.
+
+Given a key, every incoming request is checked against the `X-Session-Replay-Signature`
+header - HMAC-SHA256 over `<unix timestamp>.<raw body>`, with the timestamp inside the signed
+material and a five minute tolerance, which is exactly what the sending side does.
+
+The key belongs to one webhook destination rather than to an account, which is why it lives
+on the trigger. Every Zap has its own webhook URL, so every Zap is its own destination with
+its own secret, and rotating that secret on the Connectors screen stops that one Zap until
+the new key is pasted in. A pasted key wins over the one subscribing stored, so rotating is
+still the way out.
 
 ## Why there is no account connection
 
@@ -96,21 +107,31 @@ is configured - and there is no refresh the integration can drive, because refre
 are single-use and mint a replacement session, which Zapier has nowhere to put. The token
 would have worked on the day it was pasted and returned `401` from then on.
 
-The API buys nothing this integration needs: deliveries arrive by push, so the connection
-would exist only to fill the test step. It fills that from the samples instead. OAuth is the
-scheme that would survive - `/oauth/authorize` and `/oauth/token` are already served, and
-Zapier stores rotated tokens - but it needs a `client_id` that resolves to a metadata
-document declaring Zapier's redirect URI, and that URI is only known once the integration is
-registered.
+Deliveries arrive by push, so a connection would have existed only to fill the test step,
+which now answers from the samples instead. The one call the integration does make is
+subscribing, and that is a single request at the moment the token is pasted rather than a
+credential Zapier has to keep working - see below.
 
-## Why the URL is pasted by hand
+## Subscribing, and what a day-long token costs
 
-Zapier prefers REST Hooks, where `performSubscribe` creates the destination over the API and
-`performUnsubscribe` removes it. Session Replay has no API for webhook destinations today -
-they exist only on the Connectors screen - so the app ships as a static webhook, which the
-platform schema accepts. Adding `performSubscribe` and `performUnsubscribe` later is a small
-addition to `lib/hook.js` once that endpoint exists; nothing else here changes, because the
+`performSubscribe` posts `{url: <the Zap's webhook URL>, events: [<the trigger's event>]}` to
+`/api/v1/webhook_destinations` and keeps the `id` and the signing key that come back;
+`performUnsubscribe` deletes that id. Nothing else changed to make that work, because the
 delivery it subscribes to is already the one these triggers read.
+
+An API token is a JWT whose lifetime is a day, and there is no refresh the integration can
+drive, so a token pasted today is refused tomorrow. Subscribing happens seconds after it is
+pasted and works. Unsubscribing happens whenever the Zap is turned off, which may be much
+later, and will be refused then: the destination survives and has to be removed on the
+Connectors screen. Turning that Zap on again with a fresh token registers a second
+destination rather than reclaiming the first, so a Zap switched on and off over a long life
+leaves destinations behind to be tidied up there.
+
+What removes that gap is OAuth rather than a longer token. Zapier persists rotated tokens,
+and the site already serves the authorization code and refresh token grants, but the
+`client_id` has to resolve to a metadata document declaring Zapier's redirect URI, and that
+URI is only known once the integration is registered. So this is the shape to revisit
+immediately after registering, not before.
 
 ## Testing a trigger before an event has happened
 
@@ -153,11 +174,11 @@ to Session Replay, a category, and whether to subscribe to platform email. It wr
 `.zapierapprc`, which is git-ignored here because it names one account's integration.
 
 `push` then validates and uploads. Style warnings do not stop it; only style errors do, and
-`npx zapier-platform validate` lists both. Expect warnings about the triggers having no
-`performSubscribe` and about the app declaring no authentication - both are the decisions
-above, and `--without-style` skips the style pass if either ever hardens into an error. The
-schema calls both of these expectations of a public app, so directory review is where they
-have to be argued rather than the push.
+`npx zapier-platform validate` lists both. Expect a warning about the app declaring no
+authentication - that is the decision above, and `zapier-platform push --skip-validation`
+gets past it if it ever hardens into an error. The schema calls authentication an
+expectation of a public app, so directory review is where it has to be argued rather than
+the push.
 
 Submitting the integration for directory review is a separate step, done in the Zapier
 console rather than from the command line.
