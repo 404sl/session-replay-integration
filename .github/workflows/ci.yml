@@ -18,6 +18,10 @@ jobs:
       # No install step: this package has no dependencies, which is the point of it.
       - run: npm test
 
+      - name: Zapier app definition
+        working-directory: zapier
+        run: npm test
+
       # The built file is committed, because a script tag loads it straight from here. If
       # a change to src did not come with its rebuild, the file sites are served would be
       # older than the code in the repo - so the build runs and the diff must be empty.

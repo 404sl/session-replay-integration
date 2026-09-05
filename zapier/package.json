@@ -1,0 +1,23 @@
+{
+  "name": "@404sl/session-replay-zapier",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Zapier integration for Session Replay, driven by the signed webhooks the app already sends.",
+  "main": "index.js",
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "validate": "zapier-platform validate",
+    "push": "zapier-platform push"
+  },
+  "dependencies": {
+    "zapier-platform-core": "19.1.0"
+  },
+  "devDependencies": {
+    "zapier-platform-cli": "19.1.0"
+  },
+  "engines": {
+    "node": ">=18",
+    "npm": ">=8"
+  },
+  "license": "MIT"
+}
