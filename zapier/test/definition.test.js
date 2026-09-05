@@ -38,14 +38,14 @@ test('nothing outside the subscribe pair calls the Session Replay API', () => {
   assert.doesNotMatch(appSource(['lib/hook.js']), /z\.request|\/api\/v1|Authorization/);
 });
 
-test('the subscribe pair calls the webhook destinations endpoint and nothing else', () => {
+test('the subscribe pair calls the destinations endpoint and the teams it offers, nothing else', () => {
   const source = appSource().match(/\/api\/v1[\w/]*/g) ?? [];
 
-  assert.deepEqual([...new Set(source)], ['/api/v1/webhook_destinations']);
+  assert.deepEqual([...new Set(source)].sort(), ['/api/v1/teams', '/api/v1/webhook_destinations']);
 });
 
-test('every trigger is an inbound hook rather than a poll of our own API', () => {
-  Object.entries(app.triggers).forEach(([key, trigger]) => {
+test('every trigger a Zap can pick is an inbound hook rather than a poll of our own API', () => {
+  Object.entries(app.triggers).filter(([, trigger]) => !trigger.display.hidden).forEach(([key, trigger]) => {
     assert.equal(trigger.key, key);
     assert.equal(trigger.operation.type, 'hook');
     assert.equal(typeof trigger.operation.perform, 'function');
@@ -56,6 +56,40 @@ test('every trigger is an inbound hook rather than a poll of our own API', () =>
     assert.ok(trigger.display.description.endsWith('.'));
     assert.ok(trigger.noun);
   });
+});
+
+test('the only trigger that polls our API is the hidden one behind the team field', () => {
+  const polling = Object.values(app.triggers).filter((trigger) => trigger.operation.type !== 'hook');
+
+  assert.deepEqual(polling.map((trigger) => trigger.key), ['teamList']);
+  assert.equal(app.triggers.teamList.display.hidden, true);
+  assert.equal(typeof app.triggers.teamList.operation.perform, 'function');
+});
+
+test('the team field names the trigger that fills it', () => {
+  Object.values(app.triggers)
+    .filter((trigger) => trigger.operation.type === 'hook')
+    .forEach((trigger) => {
+      const team = trigger.operation.inputFields.find((field) => field.key === 'team_id');
+
+      assert.equal(team.dynamic, `${app.triggers.teamList.key}.id.name`);
+    });
+});
+
+test('the hidden team trigger declares the token it is filled from', () => {
+  const declared = app.triggers.teamList.operation.inputFields;
+
+  assert.deepEqual(declared, [{ key: 'api_token', label: 'API token', type: 'password', required: true }]);
+});
+
+test('pasting the token refreshes the team menu, because the menu is drawn from it', () => {
+  Object.values(app.triggers)
+    .filter((trigger) => trigger.operation.type === 'hook')
+    .forEach((trigger) => {
+      const token = trigger.operation.inputFields.find((field) => field.key === 'api_token');
+
+      assert.equal(token.altersDynamicFields, true);
+    });
 });
 
 test('the app offers no actions, because it only listens', () => {
