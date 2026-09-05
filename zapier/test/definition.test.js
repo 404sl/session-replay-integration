@@ -21,17 +21,27 @@ test('the app asks for no connection, because it only receives deliveries', () =
   assert.deepEqual(app.afterResponse, []);
 });
 
-test('nothing in the app calls the Session Replay API', () => {
+const appSource = (except = []) => {
   const fs = require('node:fs');
   const root = `${__dirname}/..`;
-  const source = fs
+
+  return fs
     .readdirSync(root, { recursive: true })
     .filter((name) => name.endsWith('.js'))
     .filter((name) => !['test', 'node_modules', 'build'].some((skip) => name.startsWith(skip)))
+    .filter((name) => !except.includes(name))
     .map((name) => fs.readFileSync(`${root}/${name}`, 'utf8'))
     .join('\n');
+};
 
-  assert.doesNotMatch(source, /z\.request|\/api\/v1|Authorization/);
+test('nothing outside the subscribe pair calls the Session Replay API', () => {
+  assert.doesNotMatch(appSource(['lib/hook.js']), /z\.request|\/api\/v1|Authorization/);
+});
+
+test('the subscribe pair calls the webhook destinations endpoint and nothing else', () => {
+  const source = appSource().match(/\/api\/v1[\w/]*/g) ?? [];
+
+  assert.deepEqual([...new Set(source)], ['/api/v1/webhook_destinations']);
 });
 
 test('every trigger is an inbound hook rather than a poll of our own API', () => {
@@ -40,6 +50,8 @@ test('every trigger is an inbound hook rather than a poll of our own API', () =>
     assert.equal(trigger.operation.type, 'hook');
     assert.equal(typeof trigger.operation.perform, 'function');
     assert.equal(typeof trigger.operation.performList, 'function');
+    assert.equal(typeof trigger.operation.performSubscribe, 'function');
+    assert.equal(typeof trigger.operation.performUnsubscribe, 'function');
     assert.ok(trigger.display.label);
     assert.ok(trigger.display.description.endsWith('.'));
     assert.ok(trigger.noun);
