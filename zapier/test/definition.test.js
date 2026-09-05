@@ -26,7 +26,8 @@ test('nothing in the app calls the Session Replay API', () => {
   const root = `${__dirname}/..`;
   const source = fs
     .readdirSync(root, { recursive: true })
-    .filter((name) => name.endsWith('.js') && !name.startsWith('test'))
+    .filter((name) => name.endsWith('.js'))
+    .filter((name) => !['test', 'node_modules', 'build'].some((skip) => name.startsWith(skip)))
     .map((name) => fs.readFileSync(`${root}/${name}`, 'utf8'))
     .join('\n');
 
