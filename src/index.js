@@ -203,4 +203,4 @@ export function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {})
   });
 }
 
-export { showSplash, isSupportedBrowser, isAppWindow, detectExtension, identify, configureBeacon };
+export { showSplash, isSupportedBrowser, isAppWindow, detectExtension, identify };

@@ -7,7 +7,7 @@ export const PRESSED_EVENT = 'button_pressed';
 
 let enabled = false;
 let endpoint = BEACON_ENDPOINT;
-let alreadySent = {};
+let alreadySent = Object.create(null);
 
 export function configureBeacon({ beacon, beaconEndpoint } = {}) {
   if (beacon !== undefined) enabled = Boolean(beacon);
@@ -16,14 +16,10 @@ export function configureBeacon({ beacon, beaconEndpoint } = {}) {
   return enabled;
 }
 
-export function beaconEnabled() {
-  return enabled;
-}
-
 export function resetBeacon() {
   enabled = false;
   endpoint = BEACON_ENDPOINT;
-  alreadySent = {};
+  alreadySent = Object.create(null);
 }
 
 export function recordEvent(name, { nav = globalThis.navigator, once = false } = {}) {

@@ -175,6 +175,18 @@ the beacon on:
 init({ beacon: true });
 ```
 
+The script tag turns it on the same way it mounts a button, after the loader has run:
+
+```html
+<script src="https://session-replay.com/integration/session-replay-0.4.0.js" defer></script>
+<script>
+  addEventListener('load', () => SessionReplay.init({ beacon: true }));
+</script>
+```
+
+Calling `init()` again is how that works: the script tag has already called it once with the
+beacon off, and the second call turns it on without counting the first one twice.
+
 It stays off until you write that. With it on, `init()` or `mountButton()` finding a button
 on the page, and every press of one, each send one `navigator.sendBeacon` request to
 `https://session-replay.com/integration/events`, carrying the event name and the version of
@@ -184,9 +196,13 @@ this library. That is the whole payload:
 { "event": "button_pressed", "version": "0.4.0" }
 ```
 
-No page URL, no page title, no referrer, nothing your visitor typed, no identifier of theirs
-and still no cookie of ours. The request's own `Origin` header names your site, which is how
-the counts find your account, and that domain is the most either of us needs.
+That payload carries no page URL, no page title, no referrer, nothing your visitor typed,
+no identifier of theirs and still no cookie of ours. Two headers the browser writes come with
+it. `Origin` names your site, which is how the counts find your account, and that domain is
+the most either of us needs. `Referer` is whatever your own referrer policy sends, because
+`sendBeacon` takes no policy of its own; under the browser default that is your origin again,
+but a page that sets `Referrer-Policy: unsafe-url` would send the visitor's full page URL, so
+set the policy you want before turning this on.
 
 Collect them yourself instead with `beaconEndpoint`:
 
@@ -195,8 +211,10 @@ init({ beacon: true, beaconEndpoint: 'https://example.com/events' });
 ```
 
 The impression is reported once per page load however many buttons are on it, and it is
-reported when `init()` runs, so a trigger your own code renders later without calling
-`init()` again is not counted as seen. Presses are reported every time.
+reported when `init()` finds a trigger already on the page or when `mountButton()` places
+one, so a trigger your own code renders later without calling either again is not counted as
+seen. It counts a trigger existing in the markup, not a visitor scrolling to it. Presses are
+reported every time.
 
 ## API
 
