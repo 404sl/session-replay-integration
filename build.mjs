@@ -17,6 +17,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const SOURCES = [
   'src/styles.js',
   'src/copy.js',
+  'src/beacon.js',
   'src/detect.js',
   'src/identify.js',
   'src/splash.js',
@@ -41,7 +42,8 @@ const banner = `/**
  * Adds a "report a bug" button to your own pages. Opens the Session Replay extension when
  * it is installed, and explains where to get it when it is not.
  *
- * Sends nothing anywhere: there is no network request in this file.
+ * Silent by default: it makes no network request unless the site turns one on with
+ * init({ beacon: true }).
  *
  * MIT licensed.
  */`;

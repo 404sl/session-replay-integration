@@ -11,13 +11,15 @@
 //   2. if it is, asks it to open its panel
 //   3. if it is not, explains what it is and where to get it
 //
-// It sends nothing anywhere. There is no network request in this library at all: no
-// analytics, no beacon, no phone home. Everything it needs to decide is available in the
-// page it is already running in, and a "report a bug" button that reported on its visitors
-// would be a poor joke.
+// It is silent unless the site asks it to speak. Everything it needs to decide is available
+// in the page it is already running in, and a "report a bug" button that reported on its
+// visitors would be a poor joke. A site that wants to know how often its own button is seen
+// and pressed can turn on init({ beacon: true }), which sends the event name and the library
+// version and nothing else.
 
 import { detectExtension, isAppWindow, isSupportedBrowser, OPEN_EVENT, OPENED_EVENT } from './detect.js';
 import { identify } from './identify.js';
+import { PRESSED_EVENT, SHOWN_EVENT, configureBeacon, recordEvent } from './beacon.js';
 import { showSplash } from './splash.js';
 import { renderPlaceholders } from './button.js';
 
@@ -133,6 +135,12 @@ export function init(options = {}) {
   // idempotent on its own: the selector only matches an element with nothing in it.
   renderPlaceholders({ doc });
 
+  configureBeacon(options);
+
+  if (doc.querySelectorAll(`[${TRIGGER_ATTRIBUTE}]`).length) {
+    recordEvent(SHOWN_EVENT, { nav: options.nav, once: true });
+  }
+
   if (doc[LISTENER_FLAG]) return false;
 
   doc[LISTENER_FLAG] = true;
@@ -161,6 +169,7 @@ export function init(options = {}) {
       if (!trigger) return;
 
       event.preventDefault();
+      recordEvent(PRESSED_EVENT, { nav: options.nav });
       onTrigger(options);
     },
     true
