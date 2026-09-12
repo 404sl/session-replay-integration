@@ -9,8 +9,8 @@ that, and the account is worth more than the saved minute. So the tag follows th
 rather than causing it.
 
 ```sh
-# 1. decide the version, point the README's pinned URLs at it, and commit that -
-#    npm version wants a clean tree
+# 1. decide the version, point the README's pinned URLs and LIBRARY_VERSION in
+#    src/beacon.js at it, and commit that - npm version wants a clean tree
 npm version minor          # or patch / major - commits and tags in one step
 
 # 2. make sure the file sites load matches the source
@@ -27,6 +27,11 @@ The README's install snippets pin the version in the filename, so they document 
 version they name rather than the one being released. The suite fails while a pin and
 `package.json` disagree, which is what stops a new function being documented under a pin
 published before it existed.
+
+`LIBRARY_VERSION` in `src/beacon.js` is the version the beacon reports, and the suite fails
+while it and `package.json` disagree. It is held in the source rather than read from
+`package.json` because the script-tag build is a concatenation of the source files and a
+browser cannot read the manifest.
 
 `--access public` because the package is scoped, and scoped packages are private by default
 - which would fail rather than publish something unintended.
