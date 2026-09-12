@@ -137,9 +137,9 @@ mountButton({ attribution: false });
 ```
 
 Removing it is a **Professional** plan feature. This library cannot check that: it is open
-source, it runs on your visitor's machine, and it reports nothing about who is on which plan
-- so the option is here for everyone and the plan is between us and you. Sites on Starter that keep the credit
-are the reason the button exists at all.
+source, it runs on your visitor's machine, and it reports nothing about who is on which
+plan, so the option is here for everyone and the plan is between us and you. Sites on
+Starter that keep the credit are the reason the button exists at all.
 
 Styling your own trigger removes it too, since then none of this markup is ours:
 
@@ -175,8 +175,8 @@ the beacon on:
 init({ beacon: true });
 ```
 
-It stays off until you write that. With it on, the button first appearing and every press of
-it each send one `navigator.sendBeacon` request to
+It stays off until you write that. With it on, `init()` or `mountButton()` finding a button
+on the page, and every press of one, each send one `navigator.sendBeacon` request to
 `https://session-replay.com/integration/events`, carrying the event name and the version of
 this library. That is the whole payload:
 
@@ -194,8 +194,9 @@ Collect them yourself instead with `beaconEndpoint`:
 init({ beacon: true, beaconEndpoint: 'https://example.com/events' });
 ```
 
-The impression is reported once per page load however many buttons are on it. Presses are
-reported every time.
+The impression is reported once per page load however many buttons are on it, and it is
+reported when `init()` runs, so a trigger your own code renders later without calling
+`init()` again is not counted as seen. Presses are reported every time.
 
 ## API
 

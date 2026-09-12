@@ -734,10 +734,10 @@ function isAppWindow({ win = window, nav = win?.navigator } = {}) {
 // privacy liability, it breaks on their next redesign, and it does not survive a security
 // review. So the site pushes what it wants us to have, and we hold it until we are asked.
 //
-// Held on the page and sent nowhere - there is no network request here any more than
-// anywhere else in this library. The values leave only in answer to a CustomEvent from the
-// extension's content script, over the same request/answer idiom as the ping/pong in
-// detect.js.
+// Held on the page and sent nowhere. Nothing here is ever put in a network request, not
+// even the one the beacon option turns on, which carries an event name and a version and
+// no context at all. The values leave only in answer to a CustomEvent from the extension's
+// content script, over the same request/answer idiom as the ping/pong in detect.js.
 
 const CONTEXT_REQUEST_EVENT = 'sessionreplay:context-request';
 const CONTEXT_EVENT = 'sessionreplay:context';
