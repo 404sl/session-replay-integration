@@ -5,7 +5,8 @@
  * Adds a "report a bug" button to your own pages. Opens the Session Replay extension when
  * it is installed, and explains where to get it when it is not.
  *
- * Sends nothing anywhere: there is no network request in this file.
+ * Silent by default: it makes no network request unless the site turns one on with
+ * init({ beacon: true }).
  *
  * MIT licensed.
  */
@@ -572,6 +573,50 @@ function copyFor({ doc = null, lang = null } = {}) {
   const code = (lang || pageLanguage(doc || globalThis.document)).toLowerCase().split('-')[0];
 
   return { ...ENGLISH, ...(TRANSLATIONS[code] || {}) };
+}
+
+const LIBRARY_VERSION = '0.4.0';
+
+const BEACON_ENDPOINT = 'https://session-replay.com/integration/events';
+
+const SHOWN_EVENT = 'button_shown';
+const PRESSED_EVENT = 'button_pressed';
+
+let enabled = false;
+let endpoint = BEACON_ENDPOINT;
+let alreadySent = {};
+
+function configureBeacon({ beacon, beaconEndpoint } = {}) {
+  if (beacon !== undefined) enabled = Boolean(beacon);
+  if (beaconEndpoint) endpoint = String(beaconEndpoint);
+
+  return enabled;
+}
+
+function beaconEnabled() {
+  return enabled;
+}
+
+function resetBeacon() {
+  enabled = false;
+  endpoint = BEACON_ENDPOINT;
+  alreadySent = {};
+}
+
+function recordEvent(name, { nav = globalThis.navigator, once = false } = {}) {
+  if (!enabled || !name) return false;
+  if (once && alreadySent[name]) return false;
+  if (!nav || typeof nav.sendBeacon !== 'function') return false;
+
+  alreadySent[name] = true;
+
+  try {
+    return Boolean(
+      nav.sendBeacon(endpoint, JSON.stringify({ event: name, version: LIBRARY_VERSION }))
+    );
+  } catch {
+    return false;
+  }
 }
 
 // Is the extension here, and can this browser run it at all?
@@ -1835,6 +1880,7 @@ function svgElement(doc, tag, attributes = {}, styles = null) {
 // second `COLOR` would be a redeclaration rather than a private helper.
 
 
+
 const BUTTON_SVG_NS = 'http://www.w3.org/2000/svg';
 
 const BUTTON_LABEL = 'Report a bug';
@@ -1877,7 +1923,8 @@ const BUTTON_COMPACT_QUERY = '(max-width: 30rem)';
  *   <div data-session-replay-button></div> and lets us fill it
  * @param {boolean} [options.attribution] show the "Powered by" line. On by default. This
  *   library cannot check anybody's plan - it is open source, it runs on the visitor's
- *   machine and it makes no network request - so this is an honesty setting, not a lock.
+ *   machine and it reports nothing about who is on which plan - so this is an honesty
+ *   setting, not a lock.
  * @returns {HTMLElement} the wrapper, or the button itself when attribution is off
  */
 function createButton(options = {}) {
@@ -2002,7 +2049,10 @@ function mountButton(options = {}) {
   // Removed before the document finished loading still means removed: the append is waiting
   // on an event, and without this it would put back a button the caller had let go of.
   whenBody(doc, () => {
-    if (!removed) doc.body.appendChild(button);
+    if (removed) return;
+
+    doc.body.appendChild(button);
+    recordEvent(SHOWN_EVENT, { nav: options.nav, once: true });
   });
 
   return {
@@ -2335,10 +2385,12 @@ function renderPlaceholders({ doc = document, label = BUTTON_LABEL } = {}) {
 //   2. if it is, asks it to open its panel
 //   3. if it is not, explains what it is and where to get it
 //
-// It sends nothing anywhere. There is no network request in this library at all: no
-// analytics, no beacon, no phone home. Everything it needs to decide is available in the
-// page it is already running in, and a "report a bug" button that reported on its visitors
-// would be a poor joke.
+// It is silent unless the site asks it to speak. Everything it needs to decide is available
+// in the page it is already running in, and a "report a bug" button that reported on its
+// visitors would be a poor joke. A site that wants to know how often its own button is seen
+// and pressed can turn on init({ beacon: true }), which sends the event name and the library
+// version and nothing else.
+
 
 
 
@@ -2456,6 +2508,12 @@ function init(options = {}) {
   // idempotent on its own: the selector only matches an element with nothing in it.
   renderPlaceholders({ doc });
 
+  configureBeacon(options);
+
+  if (doc.querySelectorAll(`[${TRIGGER_ATTRIBUTE}]`).length) {
+    recordEvent(SHOWN_EVENT, { nav: options.nav, once: true });
+  }
+
   if (doc[LISTENER_FLAG]) return false;
 
   doc[LISTENER_FLAG] = true;
@@ -2484,6 +2542,7 @@ function init(options = {}) {
       if (!trigger) return;
 
       event.preventDefault();
+      recordEvent(PRESSED_EVENT, { nav: options.nav });
       onTrigger(options);
     },
     true

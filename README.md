@@ -137,8 +137,8 @@ mountButton({ attribution: false });
 ```
 
 Removing it is a **Professional** plan feature. This library cannot check that: it is open
-source, it runs on your visitor's machine, and it makes no network request - so the option is
-here for everyone and the plan is between us and you. Sites on Starter that keep the credit
+source, it runs on your visitor's machine, and it reports nothing about who is on which plan
+- so the option is here for everyone and the plan is between us and you. Sites on Starter that keep the credit
 are the reason the button exists at all.
 
 Styling your own trigger removes it too, since then none of this markup is ours:
@@ -155,9 +155,9 @@ Styling your own trigger removes it too, since then none of this markup is ours:
 4. If the browser could never run it — Safari, Firefox — the overlay says so instead of
    offering an install that would not work.
 
-## It sends nothing anywhere
+## It sends nothing unless you ask it to
 
-There is no network request in this library. No analytics, no beacon, no phone home, no
+Out of the box there is no network request in this library. No analytics, no phone home, no
 cookie. Everything it needs is already in the page it is running in.
 
 Detection is a question asked of the page, not of us: the extension's content script
@@ -165,6 +165,37 @@ answers a `CustomEvent`. It is deliberately **not** done with `externally_connec
 messaging, because the wildcard form of that would let any site on the internet probe
 whether a visitor has the extension installed. This channel only answers pages that have
 chosen to load this library.
+
+### Counting your own button
+
+Nothing here measures whether the button is working for you. If you would like it to, turn
+the beacon on:
+
+```js
+init({ beacon: true });
+```
+
+It stays off until you write that. With it on, the button first appearing and every press of
+it each send one `navigator.sendBeacon` request to
+`https://session-replay.com/integration/events`, carrying the event name and the version of
+this library. That is the whole payload:
+
+```json
+{ "event": "button_pressed", "version": "0.4.0" }
+```
+
+No page URL, no page title, no referrer, nothing your visitor typed, no identifier of theirs
+and still no cookie of ours. The request's own `Origin` header names your site, which is how
+the counts find your account, and that domain is the most either of us needs.
+
+Collect them yourself instead with `beaconEndpoint`:
+
+```js
+init({ beacon: true, beaconEndpoint: 'https://example.com/events' });
+```
+
+The impression is reported once per page load however many buttons are on it. Presses are
+reported every time.
 
 ## API
 

@@ -19,6 +19,7 @@
 // script-tag build concatenates the source files into one scope, so a second `element` or a
 // second `COLOR` would be a redeclaration rather than a private helper.
 
+import { SHOWN_EVENT, recordEvent } from './beacon.js';
 import {
   ATTRIBUTION_NAME,
   ATTRIBUTION_PREFIX,
@@ -79,7 +80,8 @@ const BUTTON_COMPACT_QUERY = '(max-width: 30rem)';
  *   <div data-session-replay-button></div> and lets us fill it
  * @param {boolean} [options.attribution] show the "Powered by" line. On by default. This
  *   library cannot check anybody's plan - it is open source, it runs on the visitor's
- *   machine and it makes no network request - so this is an honesty setting, not a lock.
+ *   machine and it reports nothing about who is on which plan - so this is an honesty
+ *   setting, not a lock.
  * @returns {HTMLElement} the wrapper, or the button itself when attribution is off
  */
 export function createButton(options = {}) {
@@ -204,7 +206,10 @@ export function mountButton(options = {}) {
   // Removed before the document finished loading still means removed: the append is waiting
   // on an event, and without this it would put back a button the caller had let go of.
   whenBody(doc, () => {
-    if (!removed) doc.body.appendChild(button);
+    if (removed) return;
+
+    doc.body.appendChild(button);
+    recordEvent(SHOWN_EVENT, { nav: options.nav, once: true });
   });
 
   return {
