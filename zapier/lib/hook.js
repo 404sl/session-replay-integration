@@ -19,21 +19,23 @@ class MissingApiToken extends Error {
 }
 
 const MISSING_TOKEN_MESSAGE =
-  `Paste an API token from ${SETTINGS_URL} into this trigger's API token field. Without one ` +
-  'this Zap cannot register its webhook URL with Session Replay, so nothing would ever reach it.';
+  `Paste an API token from [your Session Replay settings](${SETTINGS_URL}) into this trigger's ` +
+  'API token field. Without one this Zap cannot register its webhook URL with Session Replay, so ' +
+  'nothing would ever reach it.';
 
 const SIGNING_KEY_HELP =
   'The signing key of the webhook destination this Zap registers when you turn it on. Paste it ' +
   'here: turning the Zap on keeps the key handed back with the destination, but a pasted key is ' +
   'the only one the Zap is certain to have when a delivery arrives. To get it, open that ' +
-  'destination under Connectors on https://session-replay.com, rotate its secret, and copy what ' +
+  'destination under Connectors at [session-replay.com](https://session-replay.com), rotate its ' +
+  'secret, and copy what ' +
   'the screen shows. It belongs to that one destination, so each Zap has its own, and rotating ' +
   'it again stops this Zap until the new key is pasted here. Given a key, every incoming request ' +
   'is checked against the signature Session Replay sends; without one, the Zap accepts anything ' +
   'posted to its URL.';
 
 const API_TOKEN_HELP =
-  `An API token from ${SETTINGS_URL}. Turning this Zap on uses it to register the Zap's own ` +
+  `An API token from [your Session Replay settings](${SETTINGS_URL}). Turning this Zap on uses it to register the Zap's own ` +
   'webhook URL as a destination subscribed to this one event, and turning the Zap off removes ' +
   'that destination again. A token is short lived, so paste a fresh one whenever you turn the ' +
   'Zap on. If it has expired by the time you turn the Zap off, the destination stays behind and ' +
