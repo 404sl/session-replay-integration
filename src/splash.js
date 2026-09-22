@@ -205,6 +205,7 @@ export function showChooser({ doc = document, lang = null, request = null } = {}
 
   return new Promise((resolve) => {
     let settled = false;
+    let chosen = null;
 
     const settle = (value) => {
       if (settled) return;
@@ -213,12 +214,20 @@ export function showChooser({ doc = document, lang = null, request = null } = {}
       resolve(value);
     };
 
-    const shell = overlayShell(doc, {
-      heading: COPY.chooseTitle,
-      onClose: () => settle({ chosen: null })
-    });
+    const leave = () => {
+      if (chosen) {
+        shell.close();
+
+        return;
+      }
+
+      settle({ chosen: null });
+    };
+
+    const shell = overlayShell(doc, { heading: COPY.chooseTitle, onClose: leave });
 
     const status = liveStatus(doc);
+    const actions = chooserActions(doc, { status, close: leave });
 
     const rows = CAPTURES.map((choice) =>
       choiceRow(doc, {
@@ -226,7 +235,9 @@ export function showChooser({ doc = document, lang = null, request = null } = {}
         label: COPY[choice.label],
         hint: COPY[choice.hint],
         onPress: (node) => {
-          if (settled) return;
+          if (settled || chosen) return;
+
+          chosen = choice.capture;
 
           // Dispatched from inside the press and before anything is awaited: the choice is
           // the user activation Chrome forwards to sidePanel.open, and a round trip taken
@@ -236,6 +247,7 @@ export function showChooser({ doc = document, lang = null, request = null } = {}
           rows.forEach((row) => row.disable());
           node.setAttribute('aria-busy', 'true');
           status.textContent = COPY.opening;
+          actions.awaiting();
 
           Promise.resolve(answer).then((result) =>
             settle({ chosen: choice.capture, ...result })
@@ -246,7 +258,7 @@ export function showChooser({ doc = document, lang = null, request = null } = {}
 
     shell.mount(
       chooserBody(doc, { bodyId: shell.bodyId, rows: rows.map((row) => row.node) }),
-      chooserActions(doc, { status, close: () => settle({ chosen: null }) })
+      actions.node
     );
   });
 }
@@ -727,9 +739,16 @@ function chooserActions(doc, { status, close }) {
     background: COLOR.paper
   });
 
-  bar.append(status, secondaryButton(doc, COPY.dismiss, close));
+  const dismiss = secondaryButton(doc, COPY.dismiss, close);
 
-  return bar;
+  bar.append(status, dismiss);
+
+  return {
+    node: bar,
+    awaiting() {
+      dismiss.textContent = COPY.close;
+    }
+  };
 }
 
 // The address of the page, and a button that puts it on the clipboard. Everything here is

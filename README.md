@@ -247,9 +247,14 @@ a keyboard shortcut, an error boundary — than from an element attribute.
 ### `'dismissed'`
 
 With the extension installed, a press asks what to capture before anything is armed.
-Somebody who closes that overlay — Escape, the backdrop, the close button, "Not now" — has
-changed their mind: nothing is captured, no panel opens, and `report()` returns
-`'dismissed'`.
+Somebody who closes that overlay — Escape, the backdrop, the close button, "Not now" —
+before picking a capture has changed their mind: nothing is captured, no panel opens, and
+`report()` returns `'dismissed'`.
+
+Closing it after picking one is not a dismissal, because the request has already gone to
+the extension and the page cannot take it back. The overlay closes, and `report()` still
+resolves on the answer: `'opened'`, or `'blocked'` with the refusal shown the way it always
+is.
 
 It is a new return value rather than a reuse of an old one, because the other four still
 mean exactly what they always did. `'blocked'` in particular means the extension refused,

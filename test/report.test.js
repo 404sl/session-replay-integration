@@ -10,7 +10,7 @@ const COPY = copyFor({ lang: 'en' });
 // Enough of a document to run the overlay builders end to end, and enough of a window for
 // the two handshakes report() makes before it draws anything. Same reasoning as everywhere
 // else here: jsdom would be the first dependency this package has ever had.
-function fakeDom({ appWindow = false, answer = null } = {}) {
+function fakeDom({ appWindow = false, answer = null, hold = false } = {}) {
   const created = [];
 
   const makeNode = (name) => {
@@ -77,7 +77,9 @@ function fakeDom({ appWindow = false, answer = null } = {}) {
     matchMedia: (query) => ({ matches: appWindow && query.includes('display-mode') }),
     getComputedStyle: () => ({ overflow: 'visible', paddingRight: '0px' }),
     requestAnimationFrame: (fn) => fn(),
-    setTimeout: (fn) => fn(),
+    // Held along with the reply, or the 'no answer' timeout would fire the moment the
+    // request was made and there would be nothing left in flight to test.
+    setTimeout: (fn) => (hold ? 0 : fn()),
     location: { href: 'https://example.com/checkout' },
     navigator: {},
     console: { warn: (line) => warnings.push(line) },
@@ -101,6 +103,15 @@ function fakeDom({ appWindow = false, answer = null } = {}) {
       if (event.type === PING_EVENT) reply(PONG_EVENT, { version: '1.2.0' });
       if (event.type === OPEN_EVENT) {
         asked.push(event.detail?.capture);
+
+        // A real extension answers in its own time, and what the page does in that window
+        // is the whole question here.
+        if (hold) {
+          win.answer = (detail) => reply(OPENED_EVENT, detail);
+
+          return;
+        }
+
         reply(OPENED_EVENT, answer || { opened: false, reason: 'sidePanel.open() rejected' });
       }
     }
@@ -144,6 +155,16 @@ const buttonSaying = (win, label) =>
   win.created.find((node) => node.nodeName === 'BUTTON' && node.textContent === label);
 
 const press = (node) => (node.listeners.click || []).forEach((fn) => fn());
+
+const overlayOf = (win) =>
+  win.created.find((node) => node.attributes?.['data-session-replay-splash'] !== undefined);
+
+const pressBackdrop = (win) => {
+  const overlay = overlayOf(win);
+
+  (overlay.listeners.pointerdown || []).forEach((fn) => fn({ target: overlay }));
+  (overlay.listeners.click || []).forEach((fn) => fn({ target: overlay }));
+};
 
 // report() now settles on what the visitor does with the chooser, so the pending promise is
 // handed back wrapped: returning it bare would have the await here wait for a press nobody
@@ -257,4 +278,54 @@ test('the reason the panel refused reaches the console', async () => {
   await outcome;
 
   assert.ok(win.warnings.some((line) => line.includes('sidePanel.open() rejected')));
+});
+
+// The one thing the chooser must never do: swallow a refusal. Closing the overlay after a
+// kind has already been sent cannot cancel it, so the answer still has to reach the
+// visitor - otherwise they pressed a capture, the extension refused it, and they saw
+// nothing at all.
+test('closing the chooser after choosing does not swallow the refusal', async () => {
+  const win = fakeDom({ hold: true });
+  const { outcome } = await drawChooser(win);
+
+  press(rowSaying(win, COPY.captureShot));
+
+  // The rows have gone grey and the way out says so: nothing in the card still offers to
+  // call the capture back.
+  assert.equal(buttonSaying(win, COPY.dismiss), undefined);
+
+  press(buttonSaying(win, COPY.close));
+
+  win.answer({ opened: false, reason: 'sidePanel.open() rejected' });
+
+  assert.equal(await outcome, 'blocked');
+  assert.deepEqual(win.asked, ['screenshot']);
+  assert.ok(textOf(win).includes(COPY.panelBlocked));
+});
+
+test('a panel that opens after the chooser was closed still counts as opened', async () => {
+  const win = fakeDom({ hold: true });
+  const { outcome } = await drawChooser(win);
+
+  press(rowSaying(win, COPY.captureFull));
+  press(buttonSaying(win, COPY.close));
+
+  win.answer({ opened: true });
+
+  assert.equal(await outcome, 'opened');
+  assert.deepEqual(win.asked, ['screenshot_full_page']);
+});
+
+test('the backdrop cannot cancel a capture either', async () => {
+  const win = fakeDom({ hold: true });
+  const { outcome } = await drawChooser(win);
+
+  press(rowSaying(win, COPY.captureScreen));
+  pressBackdrop(win);
+
+  win.answer({ opened: false, reason: 'sidePanel.open() rejected' });
+
+  assert.equal(await outcome, 'blocked');
+  assert.deepEqual(win.asked, ['video_screen']);
+  assert.ok(textOf(win).includes(COPY.panelBlocked));
 });
