@@ -15,9 +15,11 @@ const validator = optional('zapier-platform-core/src/tools/schema');
 const core = optional('zapier-platform-core');
 const installed = validator && core ? false : 'the Zapier platform packages are not installed';
 
-test('the app asks for no connection, because it only receives deliveries', () => {
-  assert.equal(app.authentication, undefined);
-  assert.deepEqual(app.beforeRequest, []);
+test('the app connects with OAuth2 and carries the token on every request', () => {
+  assert.equal(app.authentication.type, 'oauth2');
+  assert.equal(app.authentication.oauth2Config.enablePkce, true);
+  assert.equal(app.beforeRequest.length, 1);
+  assert.equal(typeof app.beforeRequest[0], 'function');
   assert.deepEqual(app.afterResponse, []);
 });
 
@@ -34,14 +36,20 @@ const appSource = (except = []) => {
     .join('\n');
 };
 
-test('nothing outside the subscribe pair calls the Session Replay API', () => {
-  assert.doesNotMatch(appSource(['lib/hook.js']), /z\.request|\/api\/v1|Authorization/);
+test('nothing outside the subscribe pair and the OAuth flow calls the Session Replay API', () => {
+  assert.doesNotMatch(appSource(['lib/hook.js', 'lib/authentication.js']), /z\.request|\/api\/v1|Authorization/);
 });
 
-test('the subscribe pair calls the destinations endpoint and the teams it offers, nothing else', () => {
+test('the app touches only the destinations, teams and OAuth token endpoints', () => {
   const source = appSource().match(/\/api\/v1[\w/]*/g) ?? [];
 
-  assert.deepEqual([...new Set(source)].sort(), ['/api/v1/teams', '/api/v1/webhook_destinations']);
+  assert.deepEqual([...new Set(source)].sort(), [
+    '/api/v1/auth/exchange',
+    '/api/v1/auth/login',
+    '/api/v1/me',
+    '/api/v1/teams',
+    '/api/v1/webhook_destinations'
+  ]);
 });
 
 test('every trigger a Zap can pick is an inbound hook rather than a poll of our own API', () => {
@@ -76,20 +84,8 @@ test('the team field names the trigger that fills it', () => {
     });
 });
 
-test('the hidden team trigger declares the token it is filled from', () => {
-  const declared = app.triggers.teamList.operation.inputFields;
-
-  assert.deepEqual(declared, [{ key: 'api_token', label: 'API token', type: 'password', required: true }]);
-});
-
-test('pasting the token refreshes the team menu, because the menu is drawn from it', () => {
-  Object.values(app.triggers)
-    .filter((trigger) => trigger.operation.type === 'hook')
-    .forEach((trigger) => {
-      const token = trigger.operation.inputFields.find((field) => field.key === 'api_token');
-
-      assert.equal(token.altersDynamicFields, true);
-    });
+test('the hidden team trigger declares no fields, because it runs on the connection', () => {
+  assert.deepEqual(app.triggers.teamList.operation.inputFields, []);
 });
 
 test('the app offers no actions, because it only listens', () => {
