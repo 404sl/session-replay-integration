@@ -6,22 +6,12 @@ const { OUTPUT_FIELDS } = require('./output_fields');
 const API_BASE = 'https://session-replay.com';
 const DESTINATIONS_URL = `${API_BASE}/api/v1/webhook_destinations`;
 const TEAMS_URL = `${API_BASE}/api/v1/teams`;
-const SETTINGS_URL = `${API_BASE}/app/settings`;
 
 const TEAM_PAGE_SIZE = 100;
 const TEAM_PAGE_LIMIT = 5;
 
-class MissingApiToken extends Error {
-  constructor(message) {
-    super(message);
-    this.name = 'MissingApiToken';
-  }
-}
-
-const MISSING_TOKEN_MESSAGE =
-  `Paste an API token from [your Session Replay settings](${SETTINGS_URL}) into this trigger's ` +
-  'API token field. Without one this Zap cannot register its webhook URL with Session Replay, so ' +
-  'nothing would ever reach it.';
+// The account authorizes Session Replay once through OAuth, so the access token rides on every
+// request via the app's beforeRequest middleware. Nothing here reads or asks for a token.
 
 const SIGNING_KEY_HELP =
   'The signing key of the webhook destination this Zap registers when you turn it on. Paste it ' +
@@ -33,13 +23,6 @@ const SIGNING_KEY_HELP =
   'it again stops this Zap until the new key is pasted here. Given a key, every incoming request ' +
   'is checked against the signature Session Replay sends; without one, the Zap accepts anything ' +
   'posted to its URL.';
-
-const API_TOKEN_HELP =
-  `An API token from [your Session Replay settings](${SETTINGS_URL}). Turning this Zap on uses it to register the Zap's own ` +
-  'webhook URL as a destination subscribed to this one event, and turning the Zap off removes ' +
-  'that destination again. A token is short lived, so paste a fresh one whenever you turn the ' +
-  'Zap on. If it has expired by the time you turn the Zap off, the destination stays behind and ' +
-  'is removed under Connectors instead.';
 
 const TEAM_HELP =
   'Which team receives these reports. Leave this blank to use your personal team. You must be an ' +
@@ -59,14 +42,6 @@ const teamListFailedMessage = (status) =>
 
 const INPUT_FIELDS = [
   {
-    key: 'api_token',
-    label: 'API token',
-    type: 'password',
-    required: true,
-    altersDynamicFields: true,
-    helpText: API_TOKEN_HELP
-  },
-  {
     key: 'signing_key',
     label: 'Webhook signing key',
     type: 'password',
@@ -83,11 +58,6 @@ const INPUT_FIELDS = [
     helpText: TEAM_HELP
   }
 ];
-
-const bearer = (token) => ({
-  Authorization: `Bearer ${token}`,
-  'Content-Type': 'application/json'
-});
 
 const subscription = (response) => {
   const resource = response?.data?.data ?? {};
@@ -129,10 +99,6 @@ const refusal = (z, status) => {
 };
 
 const performSubscribeFor = (event) => async (z, bundle) => {
-  const token = bundle.inputData?.api_token;
-
-  if (!token) throw new MissingApiToken(MISSING_TOKEN_MESSAGE);
-
   const team = chosenTeam(bundle);
   const body = { url: bundle.targetUrl, events: [event] };
 
@@ -141,7 +107,6 @@ const performSubscribeFor = (event) => async (z, bundle) => {
   const response = await z.request({
     url: DESTINATIONS_URL,
     method: 'POST',
-    headers: bearer(token),
     body,
     skipThrowForStatus: true
   });
@@ -157,11 +122,10 @@ const performSubscribeFor = (event) => async (z, bundle) => {
   return subscription(response);
 };
 
-const teamsPage = async (z, token, url) => {
+const teamsPage = async (z, url) => {
   const response = await z.request({
     url,
     method: 'GET',
-    headers: bearer(token),
     skipThrowForStatus: true
   });
 
@@ -172,16 +136,12 @@ const teamsPage = async (z, token, url) => {
   return response.data ?? {};
 };
 
-const listTeams = async (z, bundle) => {
-  const token = bundle.inputData?.api_token;
-
-  if (!token) throw new MissingApiToken(MISSING_TOKEN_MESSAGE);
-
+const listTeams = async (z) => {
   const teams = [];
   let url = `${TEAMS_URL}?page[size]=${TEAM_PAGE_SIZE}`;
 
   for (let page = 0; page < TEAM_PAGE_LIMIT && url; page += 1) {
-    const body = await teamsPage(z, token, url);
+    const body = await teamsPage(z, url);
 
     (body.data ?? []).forEach((row) => teams.push({ id: row.id, name: row.attributes?.name }));
 
@@ -200,21 +160,19 @@ const teamListTrigger = {
     hidden: true
   },
   operation: {
-    inputFields: [{ key: 'api_token', label: 'API token', type: 'password', required: true }],
+    inputFields: [],
     perform: listTeams
   }
 };
 
 const performUnsubscribe = async (z, bundle) => {
-  const token = bundle.inputData?.api_token;
   const id = bundle.subscribeData?.id;
 
-  if (!token || !id) return {};
+  if (!id) return {};
 
   await z.request({
     url: `${DESTINATIONS_URL}/${id}`,
-    method: 'DELETE',
-    headers: bearer(token)
+    method: 'DELETE'
   });
 
   return { id };
@@ -240,17 +198,13 @@ module.exports = {
   API_BASE,
   DESTINATIONS_URL,
   TEAMS_URL,
-  SETTINGS_URL,
   TEAM_PAGE_LIMIT,
   INPUT_FIELDS,
   SIGNING_KEY_HELP,
-  API_TOKEN_HELP,
   TEAM_HELP,
   TEAM_FORBIDDEN_MESSAGE,
   TEAM_NOT_FOUND_MESSAGE,
   teamListFailedMessage,
-  MissingApiToken,
-  MISSING_TOKEN_MESSAGE,
   performFor,
   performListFor,
   performSubscribeFor,

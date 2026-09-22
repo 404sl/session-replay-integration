@@ -257,7 +257,6 @@ test('turning a Zap on subscribes its own URL to its own event', async () => {
   assert.equal(calls.length, 1);
   assert.equal(calls[0].method, 'POST');
   assert.equal(calls[0].url, 'https://session-replay.com/api/v1/webhook_destinations');
-  assert.equal(calls[0].headers.Authorization, `Bearer ${TOKEN}`);
   assert.deepEqual(calls[0].body, { url: TARGET_URL, events: [events.REPORT_STATUS_CHANGED] });
   assert.deepEqual(subscription, { id: '42', secret: 'whsec_handed-back-on-create' });
 });
@@ -274,22 +273,14 @@ test('turning a Zap off removes the destination it created', async () => {
   assert.equal(calls.length, 1);
   assert.equal(calls[0].method, 'DELETE');
   assert.equal(calls[0].url, 'https://session-replay.com/api/v1/webhook_destinations/42');
-  assert.equal(calls[0].headers.Authorization, `Bearer ${TOKEN}`);
 });
 
-test('turning a Zap on without an API token fails loudly rather than subscribing to nothing', async () => {
-  const trigger = keyed(events.REPORT_CREATED);
-
-  await assert.rejects(
-    async () => trigger.operation.performSubscribe(refusing, { targetUrl: TARGET_URL, inputData: {} }),
-    (error) => {
-      assert.ok(error instanceof hook.MissingApiToken, `subscribing threw ${error.message}`);
-      assert.match(error.message, /API token/);
-      assert.match(error.message, /session-replay\.com\/app\/settings/);
-
-      return true;
-    }
-  );
+test('the connection is OAuth2 with PKCE, so a Zap authorizes once instead of pasting a token', () => {
+  assert.equal(app.authentication.type, 'oauth2');
+  assert.equal(app.authentication.oauth2Config.enablePkce, true);
+  assert.equal(typeof app.authentication.oauth2Config.getAccessToken, 'function');
+  assert.equal(typeof app.authentication.oauth2Config.refreshAccessToken, 'function');
+  assert.equal(typeof app.authentication.test, 'function');
 });
 
 test('turning a Zap off without an API token leaves the destination rather than failing', async () => {
@@ -346,14 +337,11 @@ test('firing and the test step never call our own API', async () => {
   }
 });
 
-test('every trigger requires the API token that lets it subscribe itself', () => {
+test('no trigger asks for a pasted API token, because the OAuth connection carries it', () => {
   hooks().forEach((trigger) => {
-    const byKey = Object.fromEntries(trigger.operation.inputFields.map((field) => [field.key, field]));
+    const keys = trigger.operation.inputFields.map((field) => field.key).sort();
 
-    assert.equal(byKey.api_token.required, true);
-    assert.equal(byKey.api_token.type, 'password');
-    assert.match(byKey.api_token.helpText, /session-replay\.com\/app\/settings/);
-    assert.doesNotMatch(byKey.api_token.helpText, /blank/);
+    assert.deepEqual(keys, ['signing_key', 'team_id']);
   });
 });
 
@@ -498,7 +486,6 @@ test('the team field is offered the teams this token can see, by name', async ()
 
   assert.equal(calls[0].method, 'GET');
   assert.match(calls[0].url, /^https:\/\/session-replay\.com\/api\/v1\/teams\?/);
-  assert.equal(calls[0].headers.Authorization, `Bearer ${TOKEN}`);
   assert.deepEqual(teams.map((team) => team.name), ['apricot', 'Mango', 'Zebra crew']);
   assert.deepEqual(teams.map((team) => team.id), ['apricot-1', 'Mango-2', 'Zebra crew-0']);
 });
@@ -535,13 +522,6 @@ test('a listing that fails says the teams could not be read rather than showing 
 
       return true;
     }
-  );
-});
-
-test('the team menu asks for the API token rather than calling the API without one', async () => {
-  await assert.rejects(
-    async () => teamList.operation.perform(refusing, { inputData: {} }),
-    hook.MissingApiToken
   );
 });
 
