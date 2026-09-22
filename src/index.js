@@ -20,7 +20,7 @@
 import { detectExtension, isAppWindow, isSupportedBrowser, OPEN_EVENT, OPENED_EVENT } from './detect.js';
 import { identify } from './identify.js';
 import { PRESSED_EVENT, SHOWN_EVENT, configureBeacon, recordEvent } from './beacon.js';
-import { showSplash } from './splash.js';
+import { showChooser, showSplash } from './splash.js';
 import { renderPlaceholders } from './button.js';
 
 export const TRIGGER_ATTRIBUTE = 'data-sr-trigger';
@@ -53,24 +53,21 @@ export async function isAvailable(options = {}) {
  * Start a report: open the panel, or explain why it cannot.
  *
  * @param {Object} [options] window/document/navigator overrides, for tests
- * @returns {Promise<string>} what happened - 'opened', 'blocked', 'missing' or 'unsupported'
+ * @returns {Promise<string>} what happened - 'opened', 'dismissed', 'blocked', 'missing' or
+ *   'unsupported'
  */
 export async function report(options = {}) {
   const { win = window, doc = document, nav = navigator } = options;
 
-  // Asked before anything is awaited, when we already know the extension is there.
+  // Drawn before anything is awaited, when we already know the extension is there.
   //
   // The gesture is the point. sidePanel.open() needs the user activation Chrome forwards
-  // from the click, and awaiting a round trip first spends it - the request would leave in
-  // a later task, with the activation gone by the time the worker sees it. So detection
-  // happens ahead of the press, and the press itself goes straight out.
-  if (knownPresent) {
-    const early = await requestPanel({ win });
-
-    if (early.opened) return 'opened';
-
-    return blocked(win, doc, early.reason);
-  }
+  // from a click, and awaiting a round trip first spends it - the request would leave in a
+  // later task, with the activation gone by the time the worker sees it. Detection happens
+  // ahead of the press for that reason, and the press that carries the choice is itself a
+  // fresh activation, so the chooser costs nothing here: the dispatch leaves from inside
+  // the row's own click.
+  if (knownPresent) return choose(win, doc);
 
   const extension = await detectExtension({ win, ...options });
 
@@ -84,7 +81,21 @@ export async function report(options = {}) {
     return supported ? 'missing' : 'unsupported';
   }
 
-  const { opened, reason } = await requestPanel({ win });
+  return choose(win, doc);
+}
+
+// Which capture, then the panel. Only ever reached with the extension present: without one
+// there is nothing to offer and the splash is the whole answer.
+async function choose(win, doc) {
+  const { chosen, opened, reason } = await showChooser({
+    doc,
+    request: (capture) => requestPanel({ win, capture })
+  });
+
+  // Nothing armed and nothing opened. A new answer rather than 'blocked', which means the
+  // extension refused - this is somebody changing their mind, and a site branching on the
+  // four values it already knew keeps the answers it already had.
+  if (!chosen) return 'dismissed';
 
   if (opened) return 'opened';
 
@@ -183,7 +194,7 @@ export function init(options = {}) {
  *
  * @returns {Promise<{opened: boolean, reason?: string}>}
  */
-export function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {}) {
+export function requestPanel({ win = window, capture = null, timeoutMs = OPEN_TIMEOUT_MS } = {}) {
   return new Promise((resolve) => {
     let settled = false;
 
@@ -198,9 +209,15 @@ export function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {})
       finish({ opened: Boolean(event?.detail?.opened), reason: event?.detail?.reason });
 
     win.addEventListener(OPENED_EVENT, onResult);
-    win.dispatchEvent(new win.CustomEvent(OPEN_EVENT));
+    // No detail at all when nothing was chosen, rather than a null one: an extension asked
+    // without a kind takes a screenshot, which is what this button did before it asked.
+    win.dispatchEvent(
+      capture
+        ? new win.CustomEvent(OPEN_EVENT, { detail: { capture } })
+        : new win.CustomEvent(OPEN_EVENT)
+    );
     win.setTimeout(() => finish({ opened: false, reason: 'no answer' }), timeoutMs);
   });
 }
 
-export { showSplash, isSupportedBrowser, isAppWindow, detectExtension, identify };
+export { showSplash, showChooser, isSupportedBrowser, isAppWindow, detectExtension, identify };

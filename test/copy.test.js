@@ -24,6 +24,16 @@ const SPOKEN_EVERYWHERE = [
   'noToolbarTitle',
   'noToolbar',
   'noToolbarNext',
+  'chooseTitle',
+  'chooseLead',
+  'captureShot',
+  'captureShotHint',
+  'captureFull',
+  'captureFullHint',
+  'captureScreen',
+  'captureScreenHint',
+  'captureTabNote',
+  'opening',
   'close',
   'gotIt'
 ];

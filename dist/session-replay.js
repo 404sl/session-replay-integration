@@ -296,6 +296,19 @@ const ENGLISH = {
     'Open this page in Chrome from the app menu, or copy the link below and paste it into ' +
     'a browser tab, then report the bug from there.',
 
+  chooseTitle: 'What should it capture?',
+  chooseLead:
+    'Session Replay is ready. Pick what to capture and the panel opens already doing it.',
+  captureShot:       'Screenshot',
+  captureShotHint:   'A picture of what is on screen right now.',
+  captureFull:       'Whole page',
+  captureFullHint:   'The entire page, stitched together from top to bottom.',
+  captureScreen:     'Record screen',
+  captureScreenHint: 'Record what goes wrong. Chrome asks which screen or window to share.',
+  captureTabNote:
+    'Recording just this tab has to be started from the Session Replay button in the toolbar.',
+  opening: 'Opening the panel...',
+
   close: 'Close',
   gotIt: 'Got it'
 };
@@ -339,6 +352,19 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Откройте эту страницу в Chrome через меню приложения или скопируйте ссылку ниже, ' +
       'вставьте её во вкладку браузера и сообщите об ошибке оттуда.',
+    chooseTitle: 'Что нужно захватить?',
+    chooseLead:
+      'Session Replay готов. Выберите, что захватить, и панель откроется, уже делая это.',
+    captureShot:       'Скриншот',
+    captureShotHint:   'Снимок того, что сейчас на экране.',
+    captureFull:       'Вся страница',
+    captureFullHint:   'Страница целиком, сшитая сверху донизу.',
+    captureScreen:     'Запись экрана',
+    captureScreenHint:
+      'Запишите, что идёт не так. Chrome спросит, каким экраном или окном поделиться.',
+    captureTabNote:
+      'Запись только этой вкладки начинается с кнопки Session Replay на панели инструментов.',
+    opening: 'Открываем панель...',
     close: 'Закрыть',
     gotIt: 'Понятно'
   },
@@ -379,6 +405,22 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Öffnen Sie diese Seite über das App-Menü in Chrome, oder kopieren Sie den Link unten, ' +
       'fügen Sie ihn in einen Browser-Tab ein und melden Sie den Fehler von dort.',
+    chooseTitle: 'Was soll aufgenommen werden?',
+    chooseLead:
+      'Session Replay ist bereit. Wählen Sie die Aufnahme, und das Panel öffnet sich, während ' +
+      'sie schon läuft.',
+    captureShot:       'Bildschirmfoto',
+    captureShotHint:   'Ein Bild von dem, was gerade auf dem Bildschirm steht.',
+    captureFull:       'Ganze Seite',
+    captureFullHint:   'Die gesamte Seite, von oben bis unten zusammengesetzt.',
+    captureScreen:     'Bildschirm aufnehmen',
+    captureScreenHint:
+      'Nehmen Sie auf, was schiefgeht. Chrome fragt, welcher Bildschirm oder welches Fenster ' +
+      'geteilt wird.',
+    captureTabNote:
+      'Nur diesen Tab aufzunehmen, muss über den Session-Replay-Knopf in der Symbolleiste ' +
+      'gestartet werden.',
+    opening: 'Panel wird geöffnet...',
     close: 'Schließen',
     gotIt: 'Verstanden'
   },
@@ -419,6 +461,20 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Abre esta página en Chrome desde el menú de la aplicación, o copia el enlace de abajo ' +
       'y pégalo en una pestaña del navegador para informar del error desde allí.',
+    chooseTitle: '¿Qué hay que capturar?',
+    chooseLead:
+      'Session Replay está listo. Elige qué capturar y el panel se abre ya haciéndolo.',
+    captureShot:       'Captura de pantalla',
+    captureShotHint:   'Una imagen de lo que hay ahora en la pantalla.',
+    captureFull:       'Página entera',
+    captureFullHint:   'La página completa, unida de arriba abajo.',
+    captureScreen:     'Grabar la pantalla',
+    captureScreenHint:
+      'Graba lo que falla. Chrome pregunta qué pantalla o ventana quieres compartir.',
+    captureTabNote:
+      'Grabar solo esta pestaña hay que iniciarlo desde el botón de Session Replay de la barra ' +
+      'de herramientas.',
+    opening: 'Abriendo el panel...',
     close: 'Cerrar',
     gotIt: 'Entendido'
   },
@@ -459,6 +515,21 @@ const TRANSLATIONS = {
     noToolbarNext:
       "Ouvrez cette page dans Chrome depuis le menu de l'application, ou copiez le lien " +
       'ci-dessous et collez-le dans un onglet du navigateur, puis signalez le bug depuis là.',
+    chooseTitle: 'Que faut-il capturer ?',
+    chooseLead:
+      "Session Replay est prêt. Choisissez quoi capturer et le panneau s'ouvre en le faisant " +
+      'déjà.',
+    captureShot:       "Capture d'écran",
+    captureShotHint:   "Une image de ce qui est à l'écran en ce moment.",
+    captureFull:       'Page entière',
+    captureFullHint:   'La page complète, assemblée de haut en bas.',
+    captureScreen:     "Enregistrer l'écran",
+    captureScreenHint:
+      'Enregistrez ce qui ne va pas. Chrome demande quel écran ou quelle fenêtre partager.',
+    captureTabNote:
+      "Enregistrer uniquement cet onglet doit être lancé depuis le bouton Session Replay de la " +
+      "barre d'outils.",
+    opening: 'Ouverture du panneau...',
     close: 'Fermer',
     gotIt: 'Compris'
   },
@@ -499,6 +570,20 @@ const TRANSLATIONS = {
     noToolbarNext:
       "Apri questa pagina in Chrome dal menu dell'applicazione, oppure copia il link qui " +
       'sotto e incollalo in una scheda del browser, poi segnala il bug da lì.',
+    chooseTitle: 'Cosa bisogna catturare?',
+    chooseLead:
+      'Session Replay è pronto. Scegli cosa catturare e il pannello si apre già mentre lo fa.',
+    captureShot:       'Schermata',
+    captureShotHint:   "Un'immagine di quello che c'è ora sullo schermo.",
+    captureFull:       'Pagina intera',
+    captureFullHint:   "La pagina completa, ricomposta dall'alto in basso.",
+    captureScreen:     'Registra lo schermo',
+    captureScreenHint:
+      'Registra cosa va storto. Chrome chiede quale schermo o finestra condividere.',
+    captureTabNote:
+      'Registrare solo questa scheda va avviato dal pulsante Session Replay nella barra degli ' +
+      'strumenti.',
+    opening: 'Apertura del pannello...',
     close: 'Chiudi',
     gotIt: 'Ho capito'
   },
@@ -539,6 +624,20 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Abra esta página no Chrome a partir do menu da aplicação, ou copie a ligação abaixo e ' +
       'cole-a num separador do navegador, e comunique o erro a partir de lá.',
+    chooseTitle: 'O que deve captar?',
+    chooseLead:
+      'O Session Replay está pronto. Escolha o que captar e o painel abre já a fazê-lo.',
+    captureShot:       'Captura de ecrã',
+    captureShotHint:   'Uma imagem do que está agora no ecrã.',
+    captureFull:       'Página inteira',
+    captureFullHint:   'A página completa, juntada de cima a baixo.',
+    captureScreen:     'Gravar o ecrã',
+    captureScreenHint:
+      'Grave o que corre mal. O Chrome pergunta que ecrã ou janela quer partilhar.',
+    captureTabNote:
+      'Gravar apenas este separador tem de ser iniciado a partir do botão do Session Replay na ' +
+      'barra de ferramentas.',
+    opening: 'A abrir o painel...',
     close: 'Fechar',
     gotIt: 'Percebi'
   }
@@ -982,7 +1081,7 @@ const RESET = {
 // Everything the focus trap will cycle through. Deliberately short: this overlay only ever
 // contains links and buttons, and a longer selector would be a promise about content that
 // does not exist.
-const FOCUSABLE = 'a[href], button, [tabindex]:not([tabindex="-1"])';
+const FOCUSABLE = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // The words this overlay is being built with. Module scope rather than threaded through
 // nine builders, which is safe for the same reason the singleton below is: one overlay
@@ -994,6 +1093,30 @@ let COPY = ENGLISH;
 // stack two dialogs, and the second one's scroll lock would remember the first one's locked
 // state as the thing to restore.
 let openSplash = null;
+
+// What the extension will run when it is asked from the page, in the order the chooser
+// offers them. A tab recording is deliberately absent: the extension refuses that kind from
+// a page invocation, so offering it here would be a button that answers with an apology.
+const CAPTURES = [
+  {
+    capture: 'screenshot',
+    label:   'captureShot',
+    hint:    'captureShotHint',
+    icon:    shotIcon
+  },
+  {
+    capture: 'screenshot_full_page',
+    label:   'captureFull',
+    hint:    'captureFullHint',
+    icon:    fullPageIcon
+  },
+  {
+    capture: 'video_screen',
+    label:   'captureScreen',
+    hint:    'captureScreenHint',
+    icon:    screenIcon
+  }
+];
 
 /**
  * Show the overlay.
@@ -1020,7 +1143,83 @@ function showSplash({
   COPY = copyFor({ doc, lang });
 
   const state = variantFor({ supported, variant, message });
+  const shell = overlayShell(doc, { heading: headline(state) });
 
+  shell.mount(
+    bodySection(doc, { state, message, bodyId: shell.bodyId, win: shell.win }),
+    actionBar(doc, { state, close: shell.close })
+  );
+
+  return shell.close;
+}
+
+/**
+ * Ask which capture to make, and say what came of the answer.
+ *
+ * @param {Object} [options]
+ * @param {Document} [options.doc]
+ * @param {string} [options.lang]
+ * @param {Function} [options.request] called with the chosen kind, from inside the press and
+ *   before anything is awaited; returns a promise of {opened, reason}
+ * @returns {Promise<{chosen: string|null, opened?: boolean, reason?: string}>}
+ */
+function showChooser({ doc = document, lang = null, request = null } = {}) {
+  if (openSplash) openSplash();
+
+  COPY = copyFor({ doc, lang });
+
+  return new Promise((resolve) => {
+    let settled = false;
+
+    const settle = (value) => {
+      if (settled) return;
+      settled = true;
+      shell.close();
+      resolve(value);
+    };
+
+    const shell = overlayShell(doc, {
+      heading: COPY.chooseTitle,
+      onClose: () => settle({ chosen: null })
+    });
+
+    const status = liveStatus(doc);
+
+    const rows = CAPTURES.map((choice) =>
+      choiceRow(doc, {
+        icon: choice.icon(doc),
+        label: COPY[choice.label],
+        hint: COPY[choice.hint],
+        onPress: (node) => {
+          if (settled) return;
+
+          // Dispatched from inside the press and before anything is awaited: the choice is
+          // the user activation Chrome forwards to sidePanel.open, and a round trip taken
+          // first would spend it.
+          const answer = request ? request(choice.capture) : Promise.resolve({ opened: true });
+
+          rows.forEach((row) => row.disable());
+          node.setAttribute('aria-busy', 'true');
+          status.textContent = COPY.opening;
+
+          Promise.resolve(answer).then((result) =>
+            settle({ chosen: choice.capture, ...result })
+          );
+        }
+      })
+    );
+
+    shell.mount(
+      chooserBody(doc, { bodyId: shell.bodyId, rows: rows.map((row) => row.node) }),
+      chooserActions(doc, { status, close: () => settle({ chosen: null }) })
+    );
+  });
+}
+
+// The dialog itself: backdrop, card, header, focus trap, scroll lock and the way out of it.
+// Both overlays are the same card with different contents, and a second copy of this would
+// be a second set of these decisions to keep in step.
+function overlayShell(doc, { heading, onClose = null }) {
   const win = doc.defaultView || null;
   const returnFocusTo = doc.activeElement;
   const titleId = uniqueId('sr-splash-title');
@@ -1095,6 +1294,8 @@ function showSplash({
     if (returnFocusTo && typeof returnFocusTo.focus === 'function' && doc.contains(returnFocusTo)) {
       returnFocusTo.focus();
     }
+
+    if (onClose) onClose();
   };
 
   const onKeydown = (event) => {
@@ -1109,13 +1310,6 @@ function showSplash({
 
     if (event.key === 'Tab') trapFocus(doc, card, event);
   };
-
-  card.append(
-    headerBar(doc, { state, titleId, close }),
-    bodySection(doc, { state, message, bodyId, win }),
-    actionBar(doc, { state, close })
-  );
-  overlay.appendChild(card);
 
   // Clicking the backdrop closes; clicking the card does not. The press has to have started
   // on the backdrop too, so selecting text in the card and releasing outside it does not
@@ -1137,13 +1331,22 @@ function showSplash({
   // swallow presses inside the dialog first.
   doc.addEventListener('keydown', onKeydown, true);
 
-  doc.body.appendChild(overlay);
-  card.focus();
-  animateIn(win, card);
-
   openSplash = close;
 
-  return close;
+  return {
+    win,
+    card,
+    titleId,
+    bodyId,
+    close,
+    mount(...sections) {
+      card.append(headerBar(doc, { heading, titleId, close }), ...sections);
+      overlay.appendChild(card);
+      doc.body.appendChild(overlay);
+      card.focus();
+      animateIn(win, card);
+    }
+  };
 }
 
 
@@ -1160,7 +1363,7 @@ function variantFor({ supported, variant, message }) {
 // The header carries the brand, because this is the one moment the visitor meets the
 // product. Emerald on white is a shape colour, not a text colour, so the band is the darker
 // end of the same hue and everything written on it is white or mint.
-function headerBar(doc, { state, titleId, close }) {
+function headerBar(doc, { heading: words, titleId, close }) {
   const bar = element(doc, 'div', {
     position: 'relative',
     flex: '0 0 auto',
@@ -1197,7 +1400,7 @@ function headerBar(doc, { state, titleId, close }) {
     })
   );
 
-  const heading = text(doc, 'h2', headline(state), {
+  const heading = text(doc, 'h2', words, {
     margin: '0.6rem 0 0',
     // Large text by the WCAG definition at bold 22px, and white on this band is 7.7:1 -
     // past the threshold for small text, never mind large.
@@ -1340,6 +1543,157 @@ function captureList(doc) {
   });
 
   return list;
+}
+
+function chooserBody(doc, { bodyId, rows }) {
+  const section = element(doc, 'div', {
+    flex: '1 1 auto',
+    padding: '1.25rem',
+    overflowY: 'auto',
+    overscrollBehavior: 'contain',
+    background: COLOR.paper
+  });
+
+  const opening = text(doc, 'p', COPY.chooseLead, {
+    color: COLOR.body,
+    fontSize: '0.9375rem'
+  });
+  opening.id = bodyId;
+
+  // No role="list" on it, unlike captureList: those are sentences being read out, these are
+  // controls, and a list wrapper would have a screen reader count them before naming them.
+  const group = element(doc, 'div', {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
+    margin: '1rem 0 0'
+  });
+
+  rows.forEach((row) => group.appendChild(row));
+
+  // A paragraph rather than a fourth row, deliberately. A tab recording cannot be started
+  // from here at all, and something that looks pressable and then refuses is worse than a
+  // sentence saying where it lives.
+  const note = text(doc, 'p', COPY.captureTabNote, {
+    margin: '0.875rem 0 0',
+    padding: '0.625rem 0.75rem',
+    background: COLOR.offPaper,
+    borderRadius: '0.625rem',
+    fontSize: '0.8125rem',
+    color: COLOR.body
+  });
+
+  section.append(opening, group, note);
+
+  return section;
+}
+
+function choiceRow(doc, { icon, label, hint, onPress }) {
+  const base = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '0.75rem',
+    width: '100%',
+    padding: '0.75rem 0.875rem',
+    minHeight: '3.25rem',
+    background: COLOR.paper,
+    border: `1px solid ${COLOR.edge}`,
+    borderRadius: '0.75rem',
+    textAlign: 'start',
+    cursor: 'pointer',
+    transition: 'background-color 140ms ease, border-color 140ms ease, box-shadow 140ms ease'
+  };
+
+  const node = element(doc, 'button', base);
+  node.type = 'button';
+
+  const titleId = uniqueId('sr-choice-title');
+  const hintId = uniqueId('sr-choice-hint');
+
+  const title = text(doc, 'span', label, {
+    fontSize: '0.9375rem',
+    fontWeight: '700',
+    lineHeight: '1.3',
+    color: COLOR.ink
+  });
+  title.id = titleId;
+
+  const note = text(doc, 'span', hint, {
+    display: 'block',
+    margin: '0.125rem 0 0',
+    fontSize: '0.8125rem',
+    lineHeight: '1.4',
+    color: COLOR.body
+  });
+  note.id = hintId;
+
+  const column = element(doc, 'div', {
+    display: 'flex',
+    flexDirection: 'column',
+    minWidth: '0'
+  });
+  column.append(title, note);
+
+  // Named by the short title and described by the hint, so voice control says "Screenshot"
+  // and a screen reader still hears what it does.
+  node.setAttribute('aria-labelledby', titleId);
+  node.setAttribute('aria-describedby', hintId);
+  node.append(icon, column);
+  node.addEventListener('click', () => onPress(node));
+
+  const paint = respond(node, {
+    base,
+    hover: { background: COLOR.wash, borderColor: COLOR.emeraldInk },
+    focus: {
+      background: COLOR.wash,
+      borderColor: COLOR.emeraldInk,
+      boxShadow: '0 0 0 3px rgba(5, 150, 105, 0.45)'
+    },
+    // Not opacity: a faded row has no contrast anybody can measure, and these have to stay
+    // readable while the panel opens.
+    disabled: { background: COLOR.offPaper, borderColor: COLOR.line, cursor: 'default' }
+  });
+
+  return {
+    node,
+    disable() {
+      node.disabled = true;
+      title.style.color = COLOR.body;
+      paint();
+    }
+  };
+}
+
+function liveStatus(doc) {
+  const status = text(doc, 'p', '', {
+    flex: '1 1 100%',
+    minHeight: '1.25rem',
+    fontSize: '0.8125rem',
+    color: COLOR.emeraldInk
+  });
+
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+
+  return status;
+}
+
+// No primary button here: the primary actions are the rows, and a green button beside them
+// would be a fourth thing to choose between.
+function chooserActions(doc, { status, close }) {
+  const bar = element(doc, 'div', {
+    flex: '0 0 auto',
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.625rem',
+    flexWrap: 'wrap',
+    padding: '0 1.25rem 1.25rem',
+    background: COLOR.paper
+  });
+
+  bar.append(status, secondaryButton(doc, COPY.dismiss, close));
+
+  return bar;
 }
 
 // The address of the page, and a button that puts it on the clipboard. Everything here is
@@ -1623,6 +1977,52 @@ function tickIcon(doc) {
   return svg;
 }
 
+const GLYPH = {
+  fill: 'none',
+  stroke: COLOR.emeraldInk,
+  strokeWidth: '1.75',
+  strokeLinecap: 'round',
+  strokeLinejoin: 'round'
+};
+
+function captureDisc(doc, glyphs) {
+  const svg = svgElement(
+    doc,
+    'svg',
+    { viewBox: '0 0 20 20', width: '28', height: '28', 'aria-hidden': 'true', focusable: 'false' },
+    { display: 'block', width: '1.75rem', height: '1.75rem', flex: '0 0 auto', marginTop: '0.1rem' }
+  );
+
+  svg.append(
+    svgElement(doc, 'circle', { cx: '10', cy: '10', r: '10' }, { fill: 'rgba(5, 150, 105, 0.16)' }),
+    ...glyphs
+  );
+
+  return svg;
+}
+
+function shotIcon(doc) {
+  return captureDisc(doc, [
+    svgElement(doc, 'rect', { x: '4.75', y: '6', width: '10.5', height: '8', rx: '1.5' }, GLYPH),
+    svgElement(doc, 'circle', { cx: '10', cy: '10', r: '1.75' }, GLYPH)
+  ]);
+}
+
+function fullPageIcon(doc) {
+  return captureDisc(doc, [
+    svgElement(doc, 'rect', { x: '6', y: '4.25', width: '8', height: '11.5', rx: '1.5' }, GLYPH),
+    svgElement(doc, 'path', { d: 'M10 7.5 V12.5 M8 10.5 L10 12.5 L12 10.5' }, GLYPH)
+  ]);
+}
+
+function screenIcon(doc) {
+  return captureDisc(doc, [
+    svgElement(doc, 'rect', { x: '4.5', y: '5.25', width: '11', height: '7.5', rx: '1.5' }, GLYPH),
+    svgElement(doc, 'path', { d: 'M8 15.25 H12' }, GLYPH),
+    svgElement(doc, 'circle', { cx: '10', cy: '9', r: '1.75' }, { fill: COLOR.emeraldInk })
+  ]);
+}
+
 function crossIcon(doc) {
   const svg = svgElement(
     doc,
@@ -1651,6 +2051,15 @@ function respond(node, states) {
 
   const paint = () => {
     Object.assign(node.style, states.base);
+
+    // A control that has stopped taking presses paints that and nothing else, so a pointer
+    // still resting on it cannot repaint a live-looking row over a dead one.
+    if (node.disabled && states.disabled) {
+      Object.assign(node.style, states.disabled);
+
+      return;
+    }
+
     if (on.hover && states.hover) Object.assign(node.style, states.hover);
     if (on.active && states.active) Object.assign(node.style, states.active);
     if (on.focus && states.focus) Object.assign(node.style, states.focus);
@@ -1670,6 +2079,8 @@ function respond(node, states) {
   node.addEventListener('pointerup', () => set('active', false));
   node.addEventListener('focus', () => set('focus', keyboardFocus(node)));
   node.addEventListener('blur', () => set('focus', false));
+
+  return paint;
 }
 
 // A ring for the keyboard and not for the mouse, where the browser can tell us which it
@@ -2422,24 +2833,21 @@ async function isAvailable(options = {}) {
  * Start a report: open the panel, or explain why it cannot.
  *
  * @param {Object} [options] window/document/navigator overrides, for tests
- * @returns {Promise<string>} what happened - 'opened', 'blocked', 'missing' or 'unsupported'
+ * @returns {Promise<string>} what happened - 'opened', 'dismissed', 'blocked', 'missing' or
+ *   'unsupported'
  */
 async function report(options = {}) {
   const { win = window, doc = document, nav = navigator } = options;
 
-  // Asked before anything is awaited, when we already know the extension is there.
+  // Drawn before anything is awaited, when we already know the extension is there.
   //
   // The gesture is the point. sidePanel.open() needs the user activation Chrome forwards
-  // from the click, and awaiting a round trip first spends it - the request would leave in
-  // a later task, with the activation gone by the time the worker sees it. So detection
-  // happens ahead of the press, and the press itself goes straight out.
-  if (knownPresent) {
-    const early = await requestPanel({ win });
-
-    if (early.opened) return 'opened';
-
-    return blocked(win, doc, early.reason);
-  }
+  // from a click, and awaiting a round trip first spends it - the request would leave in a
+  // later task, with the activation gone by the time the worker sees it. Detection happens
+  // ahead of the press for that reason, and the press that carries the choice is itself a
+  // fresh activation, so the chooser costs nothing here: the dispatch leaves from inside
+  // the row's own click.
+  if (knownPresent) return choose(win, doc);
 
   const extension = await detectExtension({ win, ...options });
 
@@ -2453,7 +2861,21 @@ async function report(options = {}) {
     return supported ? 'missing' : 'unsupported';
   }
 
-  const { opened, reason } = await requestPanel({ win });
+  return choose(win, doc);
+}
+
+// Which capture, then the panel. Only ever reached with the extension present: without one
+// there is nothing to offer and the splash is the whole answer.
+async function choose(win, doc) {
+  const { chosen, opened, reason } = await showChooser({
+    doc,
+    request: (capture) => requestPanel({ win, capture })
+  });
+
+  // Nothing armed and nothing opened. A new answer rather than 'blocked', which means the
+  // extension refused - this is somebody changing their mind, and a site branching on the
+  // four values it already knew keeps the answers it already had.
+  if (!chosen) return 'dismissed';
 
   if (opened) return 'opened';
 
@@ -2552,7 +2974,7 @@ function init(options = {}) {
  *
  * @returns {Promise<{opened: boolean, reason?: string}>}
  */
-function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {}) {
+function requestPanel({ win = window, capture = null, timeoutMs = OPEN_TIMEOUT_MS } = {}) {
   return new Promise((resolve) => {
     let settled = false;
 
@@ -2567,7 +2989,13 @@ function requestPanel({ win = window, timeoutMs = OPEN_TIMEOUT_MS } = {}) {
       finish({ opened: Boolean(event?.detail?.opened), reason: event?.detail?.reason });
 
     win.addEventListener(OPENED_EVENT, onResult);
-    win.dispatchEvent(new win.CustomEvent(OPEN_EVENT));
+    // No detail at all when nothing was chosen, rather than a null one: an extension asked
+    // without a kind takes a screenshot, which is what this button did before it asked.
+    win.dispatchEvent(
+      capture
+        ? new win.CustomEvent(OPEN_EVENT, { detail: { capture } })
+        : new win.CustomEvent(OPEN_EVENT)
+    );
     win.setTimeout(() => finish({ opened: false, reason: 'no answer' }), timeoutMs);
   });
 }

@@ -150,7 +150,9 @@ Styling your own trigger removes it too, since then none of this markup is ours:
 ## What happens when it is pressed
 
 1. It asks the extension, on this page, whether it is there.
-2. If it is, the extension opens its panel and the visitor captures the bug.
+2. If it is, an overlay asks what to capture — a screenshot, the whole page, or a screen
+   recording — and the extension opens its panel already doing the one they chose. Closing
+   that overlay without choosing captures nothing and opens nothing.
 3. If it is not, an overlay explains what it is and links to the Chrome Web Store.
 4. If the browser could never run it — Safari, Firefox — the overlay says so instead of
    offering an install that would not work.
@@ -222,7 +224,7 @@ reported every time.
 import { report, isAvailable, init, identify } from '@404sl/session-replay-integration';
 
 await isAvailable();  // is the extension on this page?
-await report();       // 'opened' | 'blocked' | 'missing' | 'unsupported'
+await report();       // 'opened' | 'dismissed' | 'blocked' | 'missing' | 'unsupported'
 init();               // listen, and fill placeholders; safe to call again
 identify({ email });  // who this is, for whenever a report is made
 ```
@@ -241,6 +243,18 @@ they are all on `window.SessionReplay`, where there is only one file to load any
 
 `report()` is there for sites that would rather trigger from their own code — a menu item,
 a keyboard shortcut, an error boundary — than from an element attribute.
+
+### `'dismissed'`
+
+With the extension installed, a press asks what to capture before anything is armed.
+Somebody who closes that overlay — Escape, the backdrop, the close button, "Not now" — has
+changed their mind: nothing is captured, no panel opens, and `report()` returns
+`'dismissed'`.
+
+It is a new return value rather than a reuse of an old one, because the other four still
+mean exactly what they always did. `'blocked'` in particular means the extension refused,
+which is a different thing from somebody deciding not to report after all, and a site
+branching on it should not start seeing one where it expected the other.
 
 ### `'blocked'`
 
