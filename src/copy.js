@@ -54,6 +54,19 @@ const ENGLISH = {
     'Open this page in Chrome from the app menu, or copy the link below and paste it into ' +
     'a browser tab, then report the bug from there.',
 
+  chooseTitle: 'What should it capture?',
+  chooseLead:
+    'Session Replay is ready. Pick what to capture and the panel opens already doing it.',
+  captureShot:       'Screenshot',
+  captureShotHint:   'A picture of what is on screen right now.',
+  captureFull:       'Whole page',
+  captureFullHint:   'The entire page, stitched together from top to bottom.',
+  captureScreen:     'Record screen',
+  captureScreenHint: 'Record what goes wrong. Chrome asks which screen or window to share.',
+  captureTabNote:
+    'Recording just this tab has to be started from the Session Replay button in the toolbar.',
+  opening: 'Opening the panel...',
+
   close: 'Close',
   gotIt: 'Got it'
 };
@@ -97,6 +110,19 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Откройте эту страницу в Chrome через меню приложения или скопируйте ссылку ниже, ' +
       'вставьте её во вкладку браузера и сообщите об ошибке оттуда.',
+    chooseTitle: 'Что нужно захватить?',
+    chooseLead:
+      'Session Replay готов. Выберите, что захватить, и панель откроется, уже делая это.',
+    captureShot:       'Скриншот',
+    captureShotHint:   'Снимок того, что сейчас на экране.',
+    captureFull:       'Вся страница',
+    captureFullHint:   'Страница целиком, сшитая сверху донизу.',
+    captureScreen:     'Запись экрана',
+    captureScreenHint:
+      'Запишите, что идёт не так. Chrome спросит, каким экраном или окном поделиться.',
+    captureTabNote:
+      'Запись только этой вкладки начинается с кнопки Session Replay на панели инструментов.',
+    opening: 'Открываем панель...',
     close: 'Закрыть',
     gotIt: 'Понятно'
   },
@@ -137,6 +163,22 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Öffnen Sie diese Seite über das App-Menü in Chrome, oder kopieren Sie den Link unten, ' +
       'fügen Sie ihn in einen Browser-Tab ein und melden Sie den Fehler von dort.',
+    chooseTitle: 'Was soll aufgenommen werden?',
+    chooseLead:
+      'Session Replay ist bereit. Wählen Sie die Aufnahme, und das Panel öffnet sich, während ' +
+      'sie schon läuft.',
+    captureShot:       'Bildschirmfoto',
+    captureShotHint:   'Ein Bild von dem, was gerade auf dem Bildschirm steht.',
+    captureFull:       'Ganze Seite',
+    captureFullHint:   'Die gesamte Seite, von oben bis unten zusammengesetzt.',
+    captureScreen:     'Bildschirm aufnehmen',
+    captureScreenHint:
+      'Nehmen Sie auf, was schiefgeht. Chrome fragt, welcher Bildschirm oder welches Fenster ' +
+      'geteilt wird.',
+    captureTabNote:
+      'Nur diesen Tab aufzunehmen, muss über den Session-Replay-Knopf in der Symbolleiste ' +
+      'gestartet werden.',
+    opening: 'Panel wird geöffnet...',
     close: 'Schließen',
     gotIt: 'Verstanden'
   },
@@ -177,6 +219,20 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Abre esta página en Chrome desde el menú de la aplicación, o copia el enlace de abajo ' +
       'y pégalo en una pestaña del navegador para informar del error desde allí.',
+    chooseTitle: '¿Qué hay que capturar?',
+    chooseLead:
+      'Session Replay está listo. Elige qué capturar y el panel se abre ya haciéndolo.',
+    captureShot:       'Captura de pantalla',
+    captureShotHint:   'Una imagen de lo que hay ahora en la pantalla.',
+    captureFull:       'Página entera',
+    captureFullHint:   'La página completa, unida de arriba abajo.',
+    captureScreen:     'Grabar la pantalla',
+    captureScreenHint:
+      'Graba lo que falla. Chrome pregunta qué pantalla o ventana quieres compartir.',
+    captureTabNote:
+      'Grabar solo esta pestaña hay que iniciarlo desde el botón de Session Replay de la barra ' +
+      'de herramientas.',
+    opening: 'Abriendo el panel...',
     close: 'Cerrar',
     gotIt: 'Entendido'
   },
@@ -217,6 +273,21 @@ const TRANSLATIONS = {
     noToolbarNext:
       "Ouvrez cette page dans Chrome depuis le menu de l'application, ou copiez le lien " +
       'ci-dessous et collez-le dans un onglet du navigateur, puis signalez le bug depuis là.',
+    chooseTitle: 'Que faut-il capturer ?',
+    chooseLead:
+      "Session Replay est prêt. Choisissez quoi capturer et le panneau s'ouvre en le faisant " +
+      'déjà.',
+    captureShot:       "Capture d'écran",
+    captureShotHint:   "Une image de ce qui est à l'écran en ce moment.",
+    captureFull:       'Page entière',
+    captureFullHint:   'La page complète, assemblée de haut en bas.',
+    captureScreen:     "Enregistrer l'écran",
+    captureScreenHint:
+      'Enregistrez ce qui ne va pas. Chrome demande quel écran ou quelle fenêtre partager.',
+    captureTabNote:
+      "Enregistrer uniquement cet onglet doit être lancé depuis le bouton Session Replay de la " +
+      "barre d'outils.",
+    opening: 'Ouverture du panneau...',
     close: 'Fermer',
     gotIt: 'Compris'
   },
@@ -257,6 +328,20 @@ const TRANSLATIONS = {
     noToolbarNext:
       "Apri questa pagina in Chrome dal menu dell'applicazione, oppure copia il link qui " +
       'sotto e incollalo in una scheda del browser, poi segnala il bug da lì.',
+    chooseTitle: 'Cosa bisogna catturare?',
+    chooseLead:
+      'Session Replay è pronto. Scegli cosa catturare e il pannello si apre già mentre lo fa.',
+    captureShot:       'Schermata',
+    captureShotHint:   "Un'immagine di quello che c'è ora sullo schermo.",
+    captureFull:       'Pagina intera',
+    captureFullHint:   "La pagina completa, ricomposta dall'alto in basso.",
+    captureScreen:     'Registra lo schermo',
+    captureScreenHint:
+      'Registra cosa va storto. Chrome chiede quale schermo o finestra condividere.',
+    captureTabNote:
+      'Registrare solo questa scheda va avviato dal pulsante Session Replay nella barra degli ' +
+      'strumenti.',
+    opening: 'Apertura del pannello...',
     close: 'Chiudi',
     gotIt: 'Ho capito'
   },
@@ -297,6 +382,20 @@ const TRANSLATIONS = {
     noToolbarNext:
       'Abra esta página no Chrome a partir do menu da aplicação, ou copie a ligação abaixo e ' +
       'cole-a num separador do navegador, e comunique o erro a partir de lá.',
+    chooseTitle: 'O que deve captar?',
+    chooseLead:
+      'O Session Replay está pronto. Escolha o que captar e o painel abre já a fazê-lo.',
+    captureShot:       'Captura de ecrã',
+    captureShotHint:   'Uma imagem do que está agora no ecrã.',
+    captureFull:       'Página inteira',
+    captureFullHint:   'A página completa, juntada de cima a baixo.',
+    captureScreen:     'Gravar o ecrã',
+    captureScreenHint:
+      'Grave o que corre mal. O Chrome pergunta que ecrã ou janela quer partilhar.',
+    captureTabNote:
+      'Gravar apenas este separador tem de ser iniciado a partir do botão do Session Replay na ' +
+      'barra de ferramentas.',
+    opening: 'A abrir o painel...',
     close: 'Fechar',
     gotIt: 'Percebi'
   }
