@@ -16,9 +16,15 @@ const tokenAttributes = (response) => response?.data?.data?.attributes ?? {};
 const tokensFrom = (response) => {
   const attributes = tokenAttributes(response);
 
-  // The refresh token rotates on every use, so the fresh one must be persisted or the next
-  // refresh is rejected as already-used.
-  return { access_token: attributes.access_token, refresh_token: attributes.refresh_token };
+  // expires_in (seconds) must be forwarded: with it absent Zapier assumes the token is already
+  // expired and marks the connection dead the instant it is made, so autoRefresh never gets a
+  // valid window to run in. The refresh token rotates on every use, so the fresh one must be
+  // persisted too or the next refresh is rejected as already-used.
+  return {
+    access_token:  attributes.access_token,
+    refresh_token: attributes.refresh_token,
+    expires_in:    attributes.expires_in
+  };
 };
 
 const getAccessToken = async (z, bundle) => {
