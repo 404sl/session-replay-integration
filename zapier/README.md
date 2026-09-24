@@ -115,8 +115,9 @@ credential Zapier has to keep working - see below.
 ## Subscribing, and what a day-long token costs
 
 `performSubscribe` posts `{url: <the Zap's webhook URL>, events: [<the trigger's event>]}` to
-`/api/v1/webhook_destinations` and keeps the `id` and the signing key that come back;
-`performUnsubscribe` deletes that id. Nothing else changed to make that work, because the
+`/api/v1/zapier/webhook_destinations`, which creates a locked Zapier destination rather than an
+editable webhook, and keeps the `id` and the signing key that come back; `performUnsubscribe`
+deletes that id through the generic `/api/v1/webhook_destinations/:id`. Nothing else changed to make that work, because the
 delivery it subscribes to is already the one these triggers read.
 
 An API token is a JWT whose lifetime is a day, and there is no refresh the integration can
