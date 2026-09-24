@@ -16,9 +16,15 @@ const tokenAttributes = (response) => response?.data?.data?.attributes ?? {};
 const tokensFrom = (response) => {
   const attributes = tokenAttributes(response);
 
-  // The refresh token rotates on every use, so the fresh one must be persisted or the next
-  // refresh is rejected as already-used.
-  return { access_token: attributes.access_token, refresh_token: attributes.refresh_token };
+  // expires_in (seconds) must be forwarded: with it absent Zapier assumes the token is already
+  // expired and marks the connection dead the instant it is made, so autoRefresh never gets a
+  // valid window to run in. The refresh token rotates on every use, so the fresh one must be
+  // persisted too or the next refresh is rejected as already-used.
+  return {
+    access_token:  attributes.access_token,
+    refresh_token: attributes.refresh_token,
+    expires_in:    attributes.expires_in
+  };
 };
 
 const getAccessToken = async (z, bundle) => {
@@ -54,17 +60,22 @@ const refreshAccessToken = async (z, bundle) => {
 
 // Proves the access token works and identifies the connected account. A 2xx is Zapier's signal
 // that the connection is good.
-const me = (z) => z.request({ url: `${API_BASE}/api/v1/me` });
+//
+// This must be a bearer-token endpoint. The extension's /me endpoint authenticates by browser
+// session (its logged-in cookie), so it answers 401 "User is not logged in" to a token and the
+// connection is marked dead the instant it is made. /api/v1/user/profile is the token-authed
+// equivalent - same JSON:API user body, including the email the label reads.
+const profile = (z) => z.request({ url: `${API_BASE}/api/v1/user/profile` });
 
 const testAuth = async (z) => {
-  const response = await me(z);
+  const response = await profile(z);
 
   return response.data;
 };
 
 // Shown against the connection so an account can tell which login a Zap runs on.
 const connectionLabel = async (z) => {
-  const response = await me(z);
+  const response = await profile(z);
 
   return response?.data?.data?.attributes?.email ?? 'Session Replay';
 };

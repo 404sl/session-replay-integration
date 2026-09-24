@@ -24,20 +24,20 @@ test('the bearer middleware leaves an unconnected request alone', () => {
   assert.equal(request.headers.Authorization, undefined);
 });
 
-test('exchanging the code reads the tokens out of the JSON:API body', async () => {
-  const z = { request: async () => jsonApi({ access_token: 'AT', refresh_token: 'RT' }) };
+test('exchanging the code reads the tokens and expiry out of the JSON:API body', async () => {
+  const z = { request: async () => jsonApi({ access_token: 'AT', refresh_token: 'RT', expires_in: 86400 }) };
 
   const tokens = await getAccessToken(z, { inputData: { code: 'c', code_verifier: 'v', redirect_uri: 'r' } });
 
-  assert.deepEqual(tokens, { access_token: 'AT', refresh_token: 'RT' });
+  assert.deepEqual(tokens, { access_token: 'AT', refresh_token: 'RT', expires_in: 86400 });
 });
 
-test('refreshing returns the rotated refresh token so the next refresh is not rejected', async () => {
-  const z = { request: async () => jsonApi({ access_token: 'AT2', refresh_token: 'RT2' }) };
+test('refreshing returns the rotated refresh token and expiry so the connection is not marked dead', async () => {
+  const z = { request: async () => jsonApi({ access_token: 'AT2', refresh_token: 'RT2', expires_in: 86400 }) };
 
   const tokens = await refreshAccessToken(z, { authData: { refresh_token: 'RT1' } });
 
-  assert.deepEqual(tokens, { access_token: 'AT2', refresh_token: 'RT2' });
+  assert.deepEqual(tokens, { access_token: 'AT2', refresh_token: 'RT2', expires_in: 86400 });
 });
 
 test('the exchange and refresh hit the JSON:API auth endpoints', async () => {
@@ -56,7 +56,7 @@ test('the exchange and refresh hit the JSON:API auth endpoints', async () => {
   assert.ok(seen[1].endsWith('/api/v1/auth/login'));
 });
 
-test('the connection test and label read the account from /api/v1/me', async () => {
+test('the connection test and label read the account from the token-authed profile endpoint', async () => {
   const urls = [];
   const z = {
     request: async (req) => {
@@ -68,7 +68,8 @@ test('the connection test and label read the account from /api/v1/me', async () 
   await testAuth(z);
   const label = await connectionLabel(z);
 
-  assert.ok(urls.every((url) => url.endsWith('/api/v1/me')));
+  // Must NOT be /api/v1/me: that is session-authed and 401s a bearer token.
+  assert.ok(urls.every((url) => url.endsWith('/api/v1/user/profile')));
   assert.equal(label, 'a@b.co');
 });
 
