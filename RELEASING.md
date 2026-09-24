@@ -42,6 +42,70 @@ the tag names is the one the registry is actually serving and that the published
 what the tag points at, and then cuts a GitHub release with generated notes. A red run means
 the tag and the published package disagree, which is worth knowing.
 
+## Copying the release to the site
+
+Publishing to npm does not reach anybody who installed with a `<script>` tag. Those pages
+load the library from session-replay.com, out of the site repository's
+`public/integration/`, so every release also needs a site pull request that does three
+things:
+
+1. **Add the versioned files.** Copy `dist/session-replay.js` and `dist/session-replay.css`
+   to `public/integration/session-replay-<version>.js` and `.css`. They are never edited or
+   removed afterwards: the site has handed out URLs with the version in the filename, and
+   nginx serves them as `public, immutable` with a far-future expiry.
+2. **Overwrite the latest files with the same bytes.** Copy the same two files over
+   `public/integration/session-replay-latest.js` and `session-replay-latest.css`.
+   `spec/models/integration_script_spec.rb` fails while the latest files differ from the
+   versioned files for `IntegrationScript::VERSION`, so the two cannot drift apart.
+3. **Bump `IntegrationScript::VERSION`** in `app/models/integration_script.rb`.
+   `IntegrationScript.path` / `url` and `stylesheet_path` / `stylesheet_url` build the pinned
+   URLs from it; `latest_path` / `latest_url` and `latest_stylesheet_path` /
+   `latest_stylesheet_url` name the latest files, which carry no version.
+
+```sh
+v=0.5.0
+cp dist/session-replay.js  ../site/public/integration/session-replay-$v.js
+cp dist/session-replay.css ../site/public/integration/session-replay-$v.css
+cp dist/session-replay.js  ../site/public/integration/session-replay-latest.js
+cp dist/session-replay.css ../site/public/integration/session-replay-latest.css
+# then set VERSION = "0.5.0" in app/models/integration_script.rb
+```
+
+The beacon reports `LIBRARY_VERSION`, which is compiled into the build, so a page loading
+the latest file still reports the real version number rather than "latest".
+
+### A release on latest is a deploy to every customer
+
+The latest files update every existing embed that uses them: a page loading
+`session-replay-latest.js` picks up a new release on its next load, without its owner doing
+anything. That makes every release that overwrites the latest files a deploy to **all** of
+those customers at once, on sites we do not control and cannot test.
+
+So the embed contract has to stay backward-compatible across every release served on
+latest: the `<script>` and `<link>` tags as the install snippet gives them, what
+`data-sr-trigger` does, `window.SessionReplay` and the functions on it, and the events
+exchanged with the extension. A page written against any earlier release on latest has to
+keep working unchanged. A change that cannot be made that way does not go on latest.
+
+There is deliberately no major-pinned alias (`session-replay-v0.js` and the like) to absorb
+a breaking change; one was considered and decided against, and this discipline replaces
+it. The version number protects nobody on latest: a major bump there still lands on every
+page that loads it.
+
+### Latest is not recommended to customers yet
+
+The latest files are on the site, but the install snippet and the docs still give the
+pinned URL, and nothing should point a customer at latest until the servers are ready.
+
+The site's `config/deploy/templates/nginx.conf.template` has a location for
+`/integration/session-replay-latest.*` that sends `Cache-Control: public, no-cache`, but an
+ordinary deploy does not rewrite the server's nginx config. Until that rule has been applied
+on staging and production, the latest files are served like everything else under
+`/integration/`: `public, immutable` with a far-future expiry. A page that loaded latest in
+that window would keep its first copy in visitors' browsers for years, out of reach of any
+later release. The snippet change that recommends latest waits until the rule is applied
+and the headers are checked on both servers.
+
 ## Versioning
 
 Semver, read from the point of view of a site that has already installed it.
