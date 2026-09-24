@@ -491,7 +491,7 @@ test('the team field is offered the teams this token can see, by name', async ()
 });
 
 test('a second page of teams is fetched, so a long list is not silently cut in half', async () => {
-  const next = 'https://session-replay.com/api/v1/teams?page%5Bafter%5D=cursor&page%5Bsize%5D=100';
+  const next = 'https://session-replay.com/api/v1/teams?membership=mine&page%5Bafter%5D=cursor&page%5Bsize%5D=100';
   const { z, calls } = api(teamsPage(['Ants'], next), teamsPage(['Bees']));
 
   const teams = await teamList.operation.perform(z, { inputData: { api_token: TOKEN } });
@@ -499,6 +499,28 @@ test('a second page of teams is fetched, so a long list is not silently cut in h
   assert.equal(calls.length, 2);
   assert.equal(calls[1].url, next);
   assert.deepEqual(teams.map((team) => team.name), ['Ants', 'Bees']);
+});
+
+test('the team list asks only for the teams this account belongs to, even for an admin', async () => {
+  const { z, calls } = api(teamsPage(['Ants']));
+
+  await teamList.operation.perform(z, { inputData: { api_token: TOKEN } });
+
+  assert.equal(new URL(calls[0].url).searchParams.get('membership'), 'mine');
+  assert.equal(new URL(calls[0].url).searchParams.get('page[size]'), '100');
+});
+
+test('a next page without the membership filter is still asked for mine, so page two cannot list every team', async () => {
+  const next = 'https://session-replay.com/api/v1/teams?page%5Bafter%5D=cursor&page%5Bsize%5D=100';
+  const { z, calls } = api(teamsPage(['Ants'], next), teamsPage(['Bees'], `${next}&membership=all`), teamsPage(['Cats']));
+
+  await teamList.operation.perform(z, { inputData: { api_token: TOKEN } });
+
+  assert.equal(calls.length, 3);
+  calls.forEach((call) => {
+    assert.deepEqual(new URL(call.url).searchParams.getAll('membership'), ['mine']);
+  });
+  assert.equal(new URL(calls[1].url).searchParams.get('page[after]'), 'cursor');
 });
 
 test('an endless list of pages stops at the cap rather than fetching for ever', async () => {

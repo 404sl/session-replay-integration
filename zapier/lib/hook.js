@@ -122,9 +122,17 @@ const performSubscribeFor = (event) => async (z, bundle) => {
   return subscription(response);
 };
 
+const onlyMine = (url) => {
+  const parsed = new URL(url);
+
+  parsed.searchParams.set('membership', 'mine');
+
+  return parsed.toString();
+};
+
 const teamsPage = async (z, url) => {
   const response = await z.request({
-    url,
+    url: onlyMine(url),
     method: 'GET',
     skipThrowForStatus: true
   });
