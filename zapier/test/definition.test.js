@@ -46,8 +46,8 @@ test('the app touches only the destinations, teams and OAuth token endpoints', (
   assert.deepEqual([...new Set(source)].sort(), [
     '/api/v1/auth/exchange',
     '/api/v1/auth/login',
-    '/api/v1/me',
     '/api/v1/teams',
+    '/api/v1/user/profile',
     '/api/v1/webhook_destinations'
   ]);
 });

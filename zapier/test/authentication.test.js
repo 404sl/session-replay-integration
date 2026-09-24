@@ -56,7 +56,7 @@ test('the exchange and refresh hit the JSON:API auth endpoints', async () => {
   assert.ok(seen[1].endsWith('/api/v1/auth/login'));
 });
 
-test('the connection test and label read the account from /api/v1/me', async () => {
+test('the connection test and label read the account from the token-authed profile endpoint', async () => {
   const urls = [];
   const z = {
     request: async (req) => {
@@ -68,7 +68,8 @@ test('the connection test and label read the account from /api/v1/me', async () 
   await testAuth(z);
   const label = await connectionLabel(z);
 
-  assert.ok(urls.every((url) => url.endsWith('/api/v1/me')));
+  // Must NOT be /api/v1/me: that is session-authed and 401s a bearer token.
+  assert.ok(urls.every((url) => url.endsWith('/api/v1/user/profile')));
   assert.equal(label, 'a@b.co');
 });
 
