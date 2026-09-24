@@ -40,12 +40,13 @@ test('nothing outside the subscribe pair and the OAuth flow calls the Session Re
   assert.doesNotMatch(appSource(['lib/hook.js', 'lib/authentication.js']), /z\.request|\/api\/v1|Authorization/);
 });
 
-test('the app touches only the destinations, teams and OAuth token endpoints', () => {
+test('the app touches only the destinations, teams, sites and OAuth token endpoints', () => {
   const source = appSource().match(/\/api\/v1[\w/]*/g) ?? [];
 
   assert.deepEqual([...new Set(source)].sort(), [
     '/api/v1/auth/exchange',
     '/api/v1/auth/login',
+    '/api/v1/sites',
     '/api/v1/teams',
     '/api/v1/user/profile',
     '/api/v1/webhook_destinations',
@@ -67,12 +68,14 @@ test('every trigger a Zap can pick is an inbound hook rather than a poll of our 
   });
 });
 
-test('the only trigger that polls our API is the hidden one behind the team field', () => {
+test('the only triggers that poll our API are the hidden ones behind the team and domain fields', () => {
   const polling = Object.values(app.triggers).filter((trigger) => trigger.operation.type !== 'hook');
 
-  assert.deepEqual(polling.map((trigger) => trigger.key), ['teamList']);
-  assert.equal(app.triggers.teamList.display.hidden, true);
-  assert.equal(typeof app.triggers.teamList.operation.perform, 'function');
+  assert.deepEqual(polling.map((trigger) => trigger.key).sort(), ['siteList', 'teamList']);
+  polling.forEach((trigger) => {
+    assert.equal(trigger.display.hidden, true);
+    assert.equal(typeof trigger.operation.perform, 'function');
+  });
 });
 
 test('the team field names the trigger that fills it', () => {
@@ -85,8 +88,25 @@ test('the team field names the trigger that fills it', () => {
     });
 });
 
-test('the hidden team trigger declares no fields, because it runs on the connection', () => {
+test('the domain field names the trigger that fills it, and a new team refreshes it', () => {
+  Object.values(app.triggers)
+    .filter((trigger) => trigger.operation.type === 'hook')
+    .forEach((trigger) => {
+      const fields = trigger.operation.inputFields;
+      const team = fields.find((field) => field.key === 'team_id');
+      const site = fields.find((field) => field.key === 'site_id');
+
+      assert.equal(site.dynamic, `${app.triggers.siteList.key}.id.domain`);
+      assert.equal(site.label, 'Domain');
+      assert.equal(site.required, false);
+      assert.equal(team.altersDynamicFields, true);
+      assert.ok(fields.indexOf(team) < fields.indexOf(site));
+    });
+});
+
+test('the hidden list triggers declare no fields, because they run on the connection and the Zap', () => {
   assert.deepEqual(app.triggers.teamList.operation.inputFields, []);
+  assert.deepEqual(app.triggers.siteList.operation.inputFields, []);
 });
 
 test('the app offers no actions, because it only listens', () => {
