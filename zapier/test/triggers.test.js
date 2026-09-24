@@ -256,7 +256,7 @@ test('turning a Zap on subscribes its own URL to its own event', async () => {
 
   assert.equal(calls.length, 1);
   assert.equal(calls[0].method, 'POST');
-  assert.equal(calls[0].url, 'https://session-replay.com/api/v1/webhook_destinations');
+  assert.equal(calls[0].url, 'https://session-replay.com/api/v1/zapier/webhook_destinations');
   assert.deepEqual(calls[0].body, { url: TARGET_URL, events: [events.REPORT_STATUS_CHANGED] });
   assert.deepEqual(subscription, { id: '42', secret: 'whsec_handed-back-on-create' });
 });
