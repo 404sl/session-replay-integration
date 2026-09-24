@@ -7,9 +7,12 @@ const API_BASE = 'https://session-replay.com';
 const DESTINATIONS_URL = `${API_BASE}/api/v1/webhook_destinations`;
 const ZAPIER_DESTINATIONS_URL = `${API_BASE}/api/v1/zapier/webhook_destinations`;
 const TEAMS_URL = `${API_BASE}/api/v1/teams`;
+const SITES_URL = `${API_BASE}/api/v1/sites`;
 
 const TEAM_PAGE_SIZE = 100;
 const TEAM_PAGE_LIMIT = 5;
+const SITE_PAGE_SIZE = 100;
+const SITE_PAGE_LIMIT = 5;
 
 // The account authorizes Session Replay once through OAuth, so the access token rides on every
 // request via the app's beforeRequest middleware. Nothing here reads or asks for a token.
@@ -29,6 +32,14 @@ const TEAM_HELP =
   'Which team receives these reports. Leave this blank to use your personal team. You must be an ' +
   'owner or admin of the team you pick.';
 
+const SITE_HELP =
+  'Only fire for reports from this domain. Leave this blank to fire for every domain on the team. ' +
+  'Pick a team first: the list shows the domains of the team chosen above.';
+
+const SITE_REFUSED_MESSAGE =
+  'Session Replay refused that domain: it does not belong to the team this Zap connects to. Open ' +
+  'the Domain field and pick a domain of that team, or leave it blank for every domain.';
+
 const TEAM_FORBIDDEN_MESSAGE =
   'Session Replay refused that team: your account belongs to it but is not an owner or admin of ' +
   'it. Pick a team you administer, or ask one of its admins to connect the Zap.';
@@ -36,6 +47,10 @@ const TEAM_FORBIDDEN_MESSAGE =
 const TEAM_NOT_FOUND_MESSAGE =
   'Session Replay does not recognise that team for this account. Open the Team field and pick ' +
   'your team again.';
+
+const siteListFailedMessage = (status) =>
+  `Session Replay could not list the team's domains (HTTP ${status}). Check the Session Replay ` +
+  'connection and try again.';
 
 const teamListFailedMessage = (status) =>
   `Session Replay could not list your teams (HTTP ${status}). Check the Session Replay connection ` +
@@ -55,8 +70,16 @@ const INPUT_FIELDS = [
     type: 'string',
     required: false,
     dynamic: 'teamList.id.name',
-    altersDynamicFields: false,
+    altersDynamicFields: true,
     helpText: TEAM_HELP
+  },
+  {
+    key: 'site_id',
+    label: 'Domain',
+    type: 'string',
+    required: false,
+    dynamic: 'siteList.id.domain',
+    helpText: SITE_HELP
   }
 ];
 
@@ -86,13 +109,19 @@ const performFor = (event) => (z, bundle) => {
 
 const performListFor = (event) => () => [sampleFor(event)];
 
-const chosenTeam = (bundle) => {
-  const team = bundle.inputData?.team_id;
+const chosen = (bundle, key) => {
+  const value = bundle.inputData?.[key];
 
-  return typeof team === 'string' && team.trim() ? team : null;
+  return typeof value === 'string' && value.trim() ? value : null;
 };
 
-const refusal = (z, status) => {
+const chosenTeam = (bundle) => chosen(bundle, 'team_id');
+
+const chosenSite = (bundle) => chosen(bundle, 'site_id');
+
+const refusal = (z, status, { team, site }) => {
+  if (site && status === 422) return new z.errors.Error(SITE_REFUSED_MESSAGE, 'SiteRefused', 422);
+  if (!team) return null;
   if (status === 403) return new z.errors.Error(TEAM_FORBIDDEN_MESSAGE, 'TeamForbidden', 403);
   if (status === 404) return new z.errors.Error(TEAM_NOT_FOUND_MESSAGE, 'TeamNotFound', 404);
 
@@ -101,9 +130,11 @@ const refusal = (z, status) => {
 
 const performSubscribeFor = (event) => async (z, bundle) => {
   const team = chosenTeam(bundle);
+  const site = chosenSite(bundle);
   const body = { url: bundle.targetUrl, events: [event] };
 
   if (team) body.team_id = team;
+  if (site) body.site_id = site;
 
   const response = await z.request({
     url: ZAPIER_DESTINATIONS_URL,
@@ -113,7 +144,7 @@ const performSubscribeFor = (event) => async (z, bundle) => {
   });
 
   if (response.status >= 400) {
-    const refused = team ? refusal(z, response.status) : null;
+    const refused = refusal(z, response.status, { team, site });
 
     if (refused) throw refused;
 
@@ -174,6 +205,61 @@ const teamListTrigger = {
   }
 };
 
+const ofTeam = (url, team) => {
+  const parsed = new URL(url);
+
+  parsed.searchParams.set('team_id', team);
+
+  return parsed.toString();
+};
+
+const sitesPage = async (z, url, team) => {
+  const response = await z.request({
+    url: ofTeam(url, team),
+    method: 'GET',
+    skipThrowForStatus: true
+  });
+
+  if (response.status >= 400) {
+    throw new z.errors.Error(siteListFailedMessage(response.status), 'SiteListFailed', response.status);
+  }
+
+  return response.data ?? {};
+};
+
+const listSites = async (z, bundle) => {
+  const team = chosenTeam(bundle);
+  const sites = [];
+
+  if (!team) return sites;
+
+  let url = `${SITES_URL}?page[size]=${SITE_PAGE_SIZE}`;
+
+  for (let page = 0; page < SITE_PAGE_LIMIT && url; page += 1) {
+    const body = await sitesPage(z, url, team);
+
+    (body.data ?? []).forEach((row) => sites.push({ id: row.id, domain: row.attributes?.domain }));
+
+    url = body.links?.next;
+  }
+
+  return sites.sort((one, other) => `${one.domain}`.localeCompare(`${other.domain}`, undefined, { sensitivity: 'base' }));
+};
+
+const siteListTrigger = {
+  key: 'siteList',
+  noun: 'Domain',
+  display: {
+    label: 'Domain',
+    description: 'Lists the domains of the team chosen on the trigger.',
+    hidden: true
+  },
+  operation: {
+    inputFields: [],
+    perform: listSites
+  }
+};
+
 const performUnsubscribe = async (z, bundle) => {
   const id = bundle.subscribeData?.id;
 
@@ -208,18 +294,25 @@ module.exports = {
   DESTINATIONS_URL,
   ZAPIER_DESTINATIONS_URL,
   TEAMS_URL,
+  SITES_URL,
   TEAM_PAGE_LIMIT,
+  SITE_PAGE_LIMIT,
   INPUT_FIELDS,
   SIGNING_KEY_HELP,
   TEAM_HELP,
+  SITE_HELP,
+  SITE_REFUSED_MESSAGE,
   TEAM_FORBIDDEN_MESSAGE,
   TEAM_NOT_FOUND_MESSAGE,
   teamListFailedMessage,
+  siteListFailedMessage,
   performFor,
   performListFor,
   performSubscribeFor,
   performUnsubscribe,
   listTeams,
   teamListTrigger,
+  listSites,
+  siteListTrigger,
   triggerFor
 };

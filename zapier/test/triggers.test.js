@@ -341,7 +341,7 @@ test('no trigger asks for a pasted API token, because the OAuth connection carri
   hooks().forEach((trigger) => {
     const keys = trigger.operation.inputFields.map((field) => field.key).sort();
 
-    assert.deepEqual(keys, ['signing_key', 'team_id']);
+    assert.deepEqual(keys, ['signing_key', 'site_id', 'team_id']);
   });
 });
 
@@ -355,6 +355,7 @@ test('the signing key help asks for the key rather than telling the Zap to do wi
 });
 
 const teamList = app.triggers.teamList;
+const siteList = app.triggers.siteList;
 
 class StubbedZapierError extends Error {
   constructor(message, code, status) {
@@ -554,5 +555,136 @@ test('the team field is optional, so a Zap with one team is not asked a question
     assert.equal(byKey.team_id.required, false);
     assert.match(byKey.team_id.helpText, /Leave this blank to use your personal team/);
     assert.match(byKey.team_id.helpText, /owner or admin/);
+  });
+});
+
+const sitesPage = (domains, next) => ({
+  status: 200,
+  data: {
+    data: domains.map((domain, index) => ({ id: `site-${index}-${domain}`, type: 'site', attributes: { domain } })),
+    links: next ? { next } : {},
+    meta: { has_next_page: Boolean(next) }
+  }
+});
+
+test('a Zap that names no domain sends no site scoping, so every domain on the team still fires', async () => {
+  const { calls } = await subscribeWith({ team_id: 'a-team-id', site_id: '' });
+
+  assert.deepEqual(calls[0].body, {
+    url: TARGET_URL,
+    events: [events.REPORT_CREATED],
+    team_id: 'a-team-id'
+  });
+  ['site_id', 'site_ids', 'all_sites'].forEach((key) => assert.equal(key in calls[0].body, false));
+});
+
+test('a domain of nothing but spaces counts as no domain at all', async () => {
+  const { calls } = await subscribeWith({ team_id: 'a-team-id', site_id: '  ' });
+
+  assert.equal('site_id' in calls[0].body, false);
+});
+
+test('the domain the author picked scopes the destination to that one site', async () => {
+  const { calls } = await subscribeWith({ team_id: 'a-team-id', site_id: 'a-site-id' });
+
+  assert.equal(calls[0].url, 'https://session-replay.com/api/v1/zapier/webhook_destinations');
+  assert.deepEqual(calls[0].body, {
+    url: TARGET_URL,
+    events: [events.REPORT_CREATED],
+    team_id: 'a-team-id',
+    site_id: 'a-site-id'
+  });
+});
+
+test('a domain refused as off the team says so rather than failing with a bare 422', async () => {
+  await assert.rejects(
+    async () => subscribeWith({ team_id: 'a-team-id', site_id: 'a-site-id' }, { status: 422, data: {} }),
+    (error) => {
+      assert.equal(error.message, hook.SITE_REFUSED_MESSAGE);
+      assert.equal(error.code, 'SiteRefused');
+      assert.equal(error.status, 422);
+
+      return true;
+    }
+  );
+});
+
+test('a 422 with no domain named is left to the platform', async () => {
+  await assert.rejects(
+    async () => subscribeWith({ team_id: 'a-team-id' }, { status: 422, data: {} }),
+    /the platform threw for HTTP 422/
+  );
+});
+
+test('the domain field lists the chosen team\'s sites by domain', async () => {
+  const { z, calls } = api(sitesPage(['zebra.example', 'Apricot.example', 'mango.example']));
+
+  const sites = await siteList.operation.perform(z, { inputData: { team_id: 'a-team-id' } });
+
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0].method, 'GET');
+  assert.match(calls[0].url, /^https:\/\/session-replay\.com\/api\/v1\/sites\?/);
+  assert.equal(new URL(calls[0].url).searchParams.get('team_id'), 'a-team-id');
+  assert.equal(new URL(calls[0].url).searchParams.get('page[size]'), '100');
+  assert.deepEqual(sites.map((site) => site.domain), ['Apricot.example', 'mango.example', 'zebra.example']);
+  assert.deepEqual(sites.map((site) => site.id), ['site-1-Apricot.example', 'site-2-mango.example', 'site-0-zebra.example']);
+});
+
+test('with no team chosen the domain field lists nothing rather than asking for every site', async () => {
+  const { z, calls } = api(sitesPage(['zebra.example']));
+
+  assert.deepEqual(await siteList.operation.perform(z, { inputData: {} }), []);
+  assert.deepEqual(await siteList.operation.perform(z, { inputData: { team_id: '  ' } }), []);
+  assert.equal(calls.length, 0);
+});
+
+test('a second page of sites is fetched and still asked for the chosen team', async () => {
+  const next = 'https://session-replay.com/api/v1/sites?page%5Bafter%5D=cursor&page%5Bsize%5D=100';
+  const { z, calls } = api(
+    sitesPage(['ants.example'], next),
+    sitesPage(['bees.example'], `${next}&team_id=another-team`),
+    sitesPage(['cats.example'])
+  );
+
+  const sites = await siteList.operation.perform(z, { inputData: { team_id: 'a-team-id' } });
+
+  assert.equal(calls.length, 3);
+  calls.forEach((call) => {
+    assert.deepEqual(new URL(call.url).searchParams.getAll('team_id'), ['a-team-id']);
+  });
+  assert.equal(new URL(calls[1].url).searchParams.get('page[after]'), 'cursor');
+  assert.deepEqual(sites.map((site) => site.domain), ['ants.example', 'bees.example', 'cats.example']);
+});
+
+test('an endless list of site pages stops at the cap rather than fetching for ever', async () => {
+  const next = 'https://session-replay.com/api/v1/sites?page%5Bafter%5D=cursor&page%5Bsize%5D=100';
+  const { z, calls } = api(sitesPage(['ants.example'], next));
+
+  const sites = await siteList.operation.perform(z, { inputData: { team_id: 'a-team-id' } });
+
+  assert.equal(calls.length, hook.SITE_PAGE_LIMIT);
+  assert.equal(sites.length, hook.SITE_PAGE_LIMIT);
+});
+
+test('a site listing that fails says the domains could not be read rather than showing an empty menu', async () => {
+  const { z } = api({ status: 500, data: {} });
+
+  await assert.rejects(
+    async () => siteList.operation.perform(z, { inputData: { team_id: 'a-team-id' } }),
+    (error) => {
+      assert.equal(error.message, hook.siteListFailedMessage(500));
+      assert.equal(error.code, 'SiteListFailed');
+
+      return true;
+    }
+  );
+});
+
+test('the domain field is optional and says a blank one means every domain', () => {
+  hooks().forEach((trigger) => {
+    const byKey = Object.fromEntries(trigger.operation.inputFields.map((field) => [field.key, field]));
+
+    assert.equal(byKey.site_id.required, false);
+    assert.match(byKey.site_id.helpText, /Leave this blank to fire for every domain/);
   });
 });

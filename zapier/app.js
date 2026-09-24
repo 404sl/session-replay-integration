@@ -4,6 +4,7 @@ const reportSeverityChanged = require('./triggers/report_severity_changed');
 const reportFirstViewed = require('./triggers/report_first_viewed');
 const reportSent = require('./triggers/report_sent');
 const teamList = require('./triggers/team_list');
+const siteList = require('./triggers/site_list');
 const { authentication, addBearerHeader } = require('./lib/authentication');
 
 const app = {
@@ -16,7 +17,8 @@ const app = {
     [reportSeverityChanged.key]: reportSeverityChanged,
     [reportFirstViewed.key]: reportFirstViewed,
     [reportSent.key]: reportSent,
-    [teamList.key]: teamList
+    [teamList.key]: teamList,
+    [siteList.key]: siteList
   },
   creates: {},
   searches: {},
