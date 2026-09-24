@@ -48,7 +48,8 @@ test('the app touches only the destinations, teams and OAuth token endpoints', (
     '/api/v1/auth/login',
     '/api/v1/teams',
     '/api/v1/user/profile',
-    '/api/v1/webhook_destinations'
+    '/api/v1/webhook_destinations',
+    '/api/v1/zapier/webhook_destinations'
   ]);
 });
 

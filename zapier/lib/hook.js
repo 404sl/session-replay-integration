@@ -5,6 +5,7 @@ const { OUTPUT_FIELDS } = require('./output_fields');
 
 const API_BASE = 'https://session-replay.com';
 const DESTINATIONS_URL = `${API_BASE}/api/v1/webhook_destinations`;
+const ZAPIER_DESTINATIONS_URL = `${API_BASE}/api/v1/zapier/webhook_destinations`;
 const TEAMS_URL = `${API_BASE}/api/v1/teams`;
 
 const TEAM_PAGE_SIZE = 100;
@@ -105,7 +106,7 @@ const performSubscribeFor = (event) => async (z, bundle) => {
   if (team) body.team_id = team;
 
   const response = await z.request({
-    url: DESTINATIONS_URL,
+    url: ZAPIER_DESTINATIONS_URL,
     method: 'POST',
     body,
     skipThrowForStatus: true
@@ -205,6 +206,7 @@ const triggerFor = ({ key, event, noun, label, description }) => ({
 module.exports = {
   API_BASE,
   DESTINATIONS_URL,
+  ZAPIER_DESTINATIONS_URL,
   TEAMS_URL,
   TEAM_PAGE_LIMIT,
   INPUT_FIELDS,
